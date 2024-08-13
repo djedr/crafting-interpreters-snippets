@@ -101,3 +101,145 @@ not[false]    true.
 ```
 [average].const[ [[min].+[max]] ./ [2] ]
 ```
+
+## 26
+
+```
+print['Hello, world!]
+```
+
+```
+['some expression]
+```
+
+```
+[
+  print['One statement.]
+  print['Two statements.]
+]
+```
+
+```
+[im a variable].let['here is my value]
+[i am nil].let[]
+```
+
+```
+[breakfast].let['bagels]
+print[breakfast]             bagels.
+[breakfast].set!['beignets]
+print[breakfast]             beignets.
+```
+
+## 27
+
+```
+if[
+  [condition] [
+    print['yes]
+  ]
+  else[
+    print['no]
+  ]
+]
+```
+
+```
+[a].let[1]
+while[
+  [a] .< [10]
+
+  print[a]
+  [a].set![ [a] .+ [1] ]
+]
+```
+
+```
+for[
+  [a].let[1]
+  [a] .< [10]
+  [a].set![ [a] .+ [1] ]
+
+  print[a]
+]
+```
+
+```
+make breakfast[ [bacon] [eggs] [toast] ]
+```
+
+```
+make breakfast[]
+```
+
+## 28
+
+```
+[print sum].const: [ [a] [b] ].fn[
+  print[ [a].+[b] ]
+]
+```
+
+```
+[return sum].const: [ [a] [b] ].fn[
+  return[ [a].+[b] ]
+]
+```
+
+```
+[add pair].const: [ [a] [b] ].fn[
+  return[ [a].+[b] ]
+]
+
+[identity].const: [a].fn[
+  return[a]
+]
+
+print[  identity[add pair]..[ [1] [2] ]  ]    Prints "3".
+```
+
+Jevlox actually compiles to a simpler language, let's call it Jevlox1, by performing at least the following transformations (spaces for clarity):
+
+1. 
+
+```
+[a].b[c]
+```
+
+translates into
+
+```
+b[ [a] [c] ]
+```
+
+2. 
+
+```
+[a].b:[c].d[e]
+```
+
+translates into
+
+```
+b[ [a] d[[c][e]] ]
+```
+
+3. 
+
+```
+f[a]..[b]
+```
+
+translates into
+
+```
+@call[ f[a] [b] ]
+```
+
+which is equivalent to JavaScript:
+
+```
+f(a)(b)
+```
+
+Jevlox1 is easily translatable at least to JavaScript.
