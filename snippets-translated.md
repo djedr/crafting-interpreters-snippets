@@ -195,7 +195,7 @@ make breakfast[]
   return[a]
 ]
 
-print[  identity[add pair]..[ [1] [2] ]  ]    Prints "3".
+print[  identity[add pair]\[ [1] [2] ]  ]    Prints "3".
 ```
 
 Jevlox actually compiles to a simpler language, let's call it Jevlox1, by performing at least the following transformations (spaces for clarity):
@@ -227,7 +227,7 @@ b[ [a] d[[c][e]] ]
 3. 
 
 ```
-f[a]..[b]
+f[a]\[b]
 ```
 
 translates into
@@ -243,3 +243,125 @@ f(a)(b)
 ```
 
 Jevlox1 is easily translatable at least to JavaScript.
+
+## 29
+
+```
+[outer function].const:[].fn[
+  [local function].const:[].fn[
+    print['I'm local!]
+  ]
+
+  local function[]
+]
+```
+
+```
+[return function].const:[].fn[
+  [outside].let['outside]
+
+  [inner].const:[].fn[
+    print[outside]
+  ]
+
+  return[inner]
+]
+
+[fn].let[return function[]]
+
+fn[]
+```
+
+## 31
+
+```
+[Breakfast].class[
+  cook[] [
+    print['Eggs a-fryin'!]
+  ]
+
+  serve[who] [
+    print[['Enjoy your breakfast, ].+[who].+['.]]
+  ]
+]
+```
+
+Not sure about this syntax.
+
+## 32
+
+```
+Store it in variables.
+[some variable].let[Breakfast]
+
+Pass it to functions.
+some function[Breakfast]
+```
+
+```
+[breakfast].let[Breakfast[].new[]]
+print[breakfast]                    "Breakfast instance".
+```
+
+```
+[breakfast].[meat].set!['sausage]
+[breakfast].[bread].set!['sourdough]
+```
+
+or
+
+```
+[breakfast].[meat]./set['sausage]
+[breakfast].[bread]./set['sourdough]
+```
+
+```
+[Breakfast].class[
+  serve[who] [
+    print[ ['Enjoy your '].+[[this].[meat]].+[' and '].+
+      [[this].[bread]].+[', '].+[who].+['.]
+    ]
+  ]
+
+  ...
+]
+```
+
+## 33
+
+```
+[Breakfast].class[
+  constructor[ [meat] [bread] ]  [
+    [this].[meat]./set[meat]
+    [this].[bread]./set[bread]
+  ]
+
+  ...
+]
+
+[bacon and toast].let[  Breakfast[ ['bacon] ['toast] ].new[]  ]
+[bacon and toast].[serve]\['Dear Reader]
+"Enjoy your bacon and tast, Dear Reader.
+```
+
+```
+[Brunch].extends[Breakfast].class[
+  drink[] [
+    print['How about a Bloody Mary?]
+  ]
+]
+```
+
+```
+[benedict].let[  Brunch[ ['ham] ['English muffin] ].new[]  ]
+[benedict].[serve]\['Noble reader]
+```
+
+```
+[Brunch].extends[Breakfast].class[
+  constructor[ [meat] [bread] [drink] ]  [
+    super[ [meat] [bread] ]
+    [this].[drink]./set[drink]
+  ]
+]
+```
