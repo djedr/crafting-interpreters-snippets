@@ -7,24 +7,24 @@ The lanugage is codenamed Jevlox -- Jevko + Lox.
 ## 6
 
 ```
-[Jevlox].error[ [line] ['Unexpected character.] ]
+[Jevlox].[error]\[ [line] ['Unexpected character.] ]
 ```
 
 ## 15
 
 ```
-[pennyArea].set![ [3.14159] .* [[0.75]./[2]] .* [[0.75]./[2]] ]
+[pennyArea]./set[ [3.14159] .* [[0.75]./[2]] .* [[0.75]./[2]] ]
 ```
 
 ```
-[pennyArea].set![0.4417860938]
+[pennyArea]./set[0.4417860938]
 ```
 
 ## 22
 
 ```
 Your first Jevlox program!
-print['Hello, world!]
+[console].[log]\['Hello, world!]
 ```
 
 ## 23
@@ -105,7 +105,13 @@ not[false]    true.
 ## 26
 
 ```
-print['Hello, world!]
+[console].[log]\['Hello, world!]
+```
+
+equivalent:
+
+```
+/print['Hello, world!]
 ```
 
 ```
@@ -114,8 +120,8 @@ print['Hello, world!]
 
 ```
 [
-  print['One statement.]
-  print['Two statements.]
+  /print['One statement.]
+  /print['Two statements.]
 ]
 ```
 
@@ -126,31 +132,26 @@ print['Hello, world!]
 
 ```
 [breakfast].let['bagels]
-print[breakfast]             bagels.
-[breakfast].set!['beignets]
-print[breakfast]             beignets.
+/print[breakfast]             bagels.
+[breakfast]./set['beignets]
+/print[breakfast]             beignets.
 ```
 
 ## 27
 
 ```
-if[
-  [condition] [
-    print['yes]
-  ]
-  else[
-    print['no]
-  ]
+if[condition]./do[
+  /print['yes]
+].else[
+  /print['no]
 ]
 ```
 
 ```
 [a].let[1]
-while[
-  [a] .< [10]
-
-  print[a]
-  [a].set![ [a] .+ [1] ]
+while[ [a] .< [10] ]./do[
+  /print[a]
+  [a]./set[ [a] .+ [1] ]
 ]
 ```
 
@@ -158,9 +159,9 @@ while[
 for[
   [a].let[1]
   [a] .< [10]
-  [a].set![ [a] .+ [1] ]
-
-  print[a]
+  [a]./set[ [a] .+ [1] ]
+]./do[
+  [console].[log]\[a]
 ]
 ```
 
@@ -175,27 +176,27 @@ make breakfast[]
 ## 28
 
 ```
-[print sum].const: [ [a] [b] ].fn[
-  print[ [a].+[b] ]
+[print sum].const: [ [a] [b] ]./fn[
+  /print[ [a].+[b] ]
 ]
 ```
 
 ```
-[return sum].const: [ [a] [b] ].fn[
+[return sum].const: [ [a] [b] ]./fn[
   return[ [a].+[b] ]
 ]
 ```
 
 ```
-[add pair].const: [ [a] [b] ].fn[
+[add pair].const: [ [a] [b] ]./fn[
   return[ [a].+[b] ]
 ]
 
-[identity].const: [a].fn[
+[identity].const: [a]./fn[
   return[a]
 ]
 
-print[  identity[add pair]\[ [1] [2] ]  ]    Prints "3".
+/print[  identity[add pair]\[ [1] [2] ]  ]    Prints "3".
 ```
 
 Jevlox actually compiles to a simpler language, let's call it Jevlox1, by performing at least the following transformations (spaces for clarity):
@@ -233,7 +234,7 @@ f[a]\[b]
 translates into
 
 ```
-@call[ f[a] [b] ]
+/call[ f[a] [b] ]
 ```
 
 which is equivalent to JavaScript:
@@ -247,9 +248,9 @@ Jevlox1 is easily translatable at least to JavaScript.
 ## 29
 
 ```
-[outer function].const:[].fn[
-  [local function].const:[].fn[
-    print['I'm local!]
+[outer function].const:[]./fn[
+  [local function].const:[]./fn[
+    /print['I'm local!]
   ]
 
   local function[]
@@ -257,11 +258,11 @@ Jevlox1 is easily translatable at least to JavaScript.
 ```
 
 ```
-[return function].const:[].fn[
+[return function].const:[]./fn[
   [outside].let['outside]
 
-  [inner].const:[].fn[
-    print[outside]
+  [inner].const:[]./fn[
+    /print[outside]
   ]
 
   return[inner]
@@ -277,11 +278,11 @@ fn[]
 ```
 [Breakfast].class[
   cook[] [
-    print['Eggs a-fryin'!]
+    /print['Eggs a-fryin'!]
   ]
 
   serve[who] [
-    print[['Enjoy your breakfast, ].+[who].+['.]]
+    /print[['Enjoy your breakfast, ].+[who].+['.]]
   ]
 ]
 ```
@@ -300,12 +301,12 @@ some function[Breakfast]
 
 ```
 [breakfast].let[Breakfast[].new[]]
-print[breakfast]                    "Breakfast instance".
+/print[breakfast]                    "Breakfast instance".
 ```
 
 ```
-[breakfast].[meat].set!['sausage]
-[breakfast].[bread].set!['sourdough]
+[breakfast].[meat]./set['sausage]
+[breakfast].[bread]./set['sourdough]
 ```
 
 or
@@ -318,7 +319,7 @@ or
 ```
 [Breakfast].class[
   serve[who] [
-    print[ ['Enjoy your '].+[[this].[meat]].+[' and '].+
+    /print[ ['Enjoy your '].+[[this].[meat]].+[' and '].+
       [[this].[bread]].+[', '].+[who].+['.]
     ]
   ]
@@ -347,7 +348,7 @@ or
 ```
 [Brunch].extends[Breakfast].class[
   drink[] [
-    print['How about a Bloody Mary?]
+    /print['How about a Bloody Mary?]
   ]
 ]
 ```
