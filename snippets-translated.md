@@ -471,4 +471,115 @@ if (this.hadError) process.exit(65)
 this.hadError = false
 ```
 
+## 43
 
+```
+[language].let['jevlox]
+```
+
+```
+// intentionally left blank
+```
+
+Leaving `TokenType` blank for now.
+
+## 44
+
+```
+// intentionally left blank
+```
+
+Leaving `TokenType` blank for now.
+
+```
+export class Token {
+  type: TokenType
+  lexeme: string
+  literal: object
+  line: number
+
+  constructor(
+    type: TokenType,
+    lexeme: string,
+    literal: object,
+    line: number,
+  ) {
+    this.type = type
+    this.lexeme = lexeme
+    this.literal = literal
+    this.line = line
+  }
+
+  public toString() {
+    return `${this.type} ${this.lexeme} ${this.literal}`
+  }
+}
+```
+
+## 46
+
+```
+import { Token } from "./Token"
+import { TokenType } from "./TokenType"
+
+export class Scanner {
+  private source: string
+  private tokens: Token[] = []
+
+  constructor(source: string) {
+    this.source = source
+  }
+}
+```
+
+```
+  scanTokens() {
+    while (!this.isAtEnd()) {
+      // We are at the beginning of the next lexeme.
+      this.start = this.current
+      this.scanToken()
+    }
+
+    this.tokens.push(new Token(TokenType.Eof, "", null, this.line))
+    return this.tokens
+  }
+```
+
+```
+  private start: number = 0
+  private current = 0
+  private line = 1
+```
+
+## 47
+
+```
+  private isAtEnd() {
+    return this.current >= this.source.length
+  }
+```
+
+```
+  private scanToken() {
+    const c = this.advance()
+
+    switch (c) {
+      case '[': this.addToken(TokenType.LeftBracket); break
+      case ']': this.addToken(TokenType.RightBracket); break
+      // TODO
+    }
+  }
+```
+
+`scanToken` is TODO for now.
+
+```
+  private advance() {
+    return this.source.charAt(this.current++)
+  }
+
+  private addToken(type: TokenType, literal: object | null = null) {
+    const text = this.source.slice(this.start, this.current)
+    this.tokens.push(new Token(type, text, literal, this.line))
+  }
+```
