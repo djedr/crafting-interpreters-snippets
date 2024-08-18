@@ -366,3 +366,109 @@ or
   ]
 ]
 ```
+
+## 35
+
+```
+/print[ [1] .+ [[true]./if[2]./else[3]] .+ [4] ]
+```
+
+## 40
+
+Gonna port the Java code to TypeScript and adjust to Jevlox.
+
+```
+import fs from 'node:fs'
+
+import * as readline from 'node:readline';
+
+// workaround for a bug in readline: https://github.com/nodejs/node/issues/53497
+const readLine = (() => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  })
+  let _reject = () => {}
+  rl.on('close', () => _reject('close'))
+  return () => new Promise((resolve, reject) => {
+    _reject = reject
+    rl.question('> ', resolve)
+  }).catch((e) => {
+    console.error('interrupted', e)
+    return null
+  })
+})()
+
+class Jevlox {
+  static async main(args: string[]) {
+    if (args.length > 1) {
+      console.log('Usage: jevlox [script]')
+      process.exit(64)
+    }
+    else if (args.length === 1) {
+      runFile(args[0])
+    }
+    else {
+      await runPrompt()
+    }
+  }
+}
+```
+
+```
+private static runFile(path: string) {
+  run(fs.readFileSync(path, 'utf8'))
+}
+```
+
+```
+private static async runPrompt() {
+  for (;;) {
+    const line = await readLine()
+    if (line === null) break
+    run(line)
+  }
+}
+```
+
+## 41
+
+```
+private static run(source: string) {
+  const scanner = new Scanner(source)
+  const tokens = scanner.scanTokens()
+
+  // For now, just print the tokens.
+  for (const token of tokens) {
+    console.log(token)
+  }
+}
+```
+
+```
+static error(line: number, message: string) {
+  Jevlox.report(line, "", message)
+}
+
+private static report(line: number, where: string, message: string) {
+  console.error(`[line ${line}] Error${where}: ${message}`)
+  Jevlox.hadError = true
+}
+```
+
+## 42
+
+```
+static hadError: boolean = false
+```
+
+```
+// Indicate an error in the exit code
+if (this.hadError) process.exit(65)
+```
+
+```
+this.hadError = false
+```
+
+
