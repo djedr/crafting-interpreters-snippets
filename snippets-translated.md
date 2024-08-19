@@ -482,7 +482,6 @@ export enum TokenType {
   // Single-character tokens.
   LeftParen, RightParen, LeftBrace, RightBrace,
   Comma, Dot, Minus, Plus, Semicolon, Slash, Star,
-  LeftBracket, RightBracket, Backslash,
 
   // One or two character tokens.
   Bang, BangEqual, Equal, EqualEqual,
@@ -498,7 +497,6 @@ export enum TokenType {
   // Keywords.
   And, Class, Else, False, Fun, For, If, Nil, Or,
   Print, Return, Super, This, True, Var, While,
-  Fn, Null, Let, Const,
 
   Eof
 }
@@ -577,14 +575,19 @@ export class Scanner {
     const c = this.advance()
 
     switch (c) {
-      case '[': this.addToken(TokenType.LeftBracket); break
-      case ']': this.addToken(TokenType.RightBracket); break
-      // TODO
+      case '(': this.addToken(TokenType.LeftParen); break
+      case ')': this.addToken(TokenType.RightParen); break
+      case '{': this.addToken(TokenType.LeftBrace); break
+      case '}': this.addToken(TokenType.RightBrace); break
+      case ',': this.addToken(TokenType.Comma); break
+      case '.': this.addToken(TokenType.Dot); break
+      case '-': this.addToken(TokenType.Minus); break
+      case '+': this.addToken(TokenType.Plus); break
+      case ';': this.addToken(TokenType.Semicolon); break
+      case '*': this.addToken(TokenType.Star); break
     }
   }
 ```
-
-`scanToken` is TODO for now.
 
 ```
   private advance() {
