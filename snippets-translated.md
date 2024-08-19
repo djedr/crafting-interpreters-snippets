@@ -599,3 +599,18 @@ export class Scanner {
     this.tokens.push(new Token(type, text, literal, this.line))
   }
 ```
+
+## 48
+
+```
+      default:
+        Jevlox.error(this.line, "Unexpected character.")
+        break
+```
+
+```
+      case '!': this.addToken(this.match('=') ? TokenType.BangEqual : TokenType.Bang); break
+      case '=': this.addToken(this.match('=') ? TokenType.EqualEqual : TokenType.Equal); break
+      case '<': this.addToken(this.match('=') ? TokenType.LessEqual : TokenType.Less); break
+      case '>': this.addToken(this.match('=') ? TokenType.GreaterEqual : TokenType.Greater); break
+```
