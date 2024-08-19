@@ -478,18 +478,31 @@ this.hadError = false
 ```
 
 ```
-// intentionally left blank
-```
+export enum TokenType {
+  // Single-character tokens.
+  LeftParen, RightParen, LeftBrace, RightBrace,
+  Comma, Dot, Minus, Plus, Semicolon, Slash, Star,
+  LeftBracket, RightBracket, Backslash,
 
-Leaving `TokenType` blank for now.
+  // One or two character tokens.
+  Bang, BangEqual, Equal, EqualEqual,
+  Greater, GreaterEqual, Less, LessEqual,
+```
 
 ## 44
 
 ```
-// intentionally left blank
-```
+  // Literals.
+  Identifier, String, Number,
 
-Leaving `TokenType` blank for now.
+  // Keywords.
+  And, Class, Else, False, Fun, For, If, Nil, Or,
+  Print, Return, Super, This, True, Var, While,
+  Fn, Null, Let, Const,
+
+  Eof
+}
+```
 
 ```
 export class Token {
