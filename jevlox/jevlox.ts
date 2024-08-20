@@ -1,6 +1,7 @@
 import * as fs from 'node:fs'
 
 import * as readline from 'node:readline';
+import { Scanner } from './Scanner.js';
 
 // workaround for a bug in readline: https://github.com/nodejs/node/issues/53497
 const readLine = (() => {
@@ -68,14 +69,5 @@ export class Jevlox {
   private static report(line: number, where: string, message: string) {
     console.error(`[line ${line}] Error${where}: ${message}`)
     Jevlox.hadError = true
-  }
-}
-
-class Scanner {
-  constructor(source: string) {
-    // todo
-  }
-  scanTokens() {
-    return []
   }
 }

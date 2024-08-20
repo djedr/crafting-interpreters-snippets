@@ -1,15 +1,17 @@
 import { TokenType } from "./TokenType.js";
 
+export type Literal = string | number | null
+
 export class Token {
   type: TokenType
   lexeme: string
-  literal: object | null
+  literal: Literal
   line: number
 
   constructor(
     type: TokenType,
     lexeme: string,
-    literal: object | null,
+    literal: Literal,
     line: number,
   ) {
     this.type = type

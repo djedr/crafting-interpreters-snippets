@@ -645,3 +645,155 @@ export class Scanner {
     return this.source.charAt(this.current)
   }
 ```
+
+The current plan is to port jlox to TypeScript without much change, except that its syntax tree will be serialized to a Jevko format. This format will also be deserializable.
+
+In parallel I intend to develop Jevlox to something like a minimal human-writable serialization of JavaScript in that it will parse into a tree that should be straightforward to translate into JavaScript.
+
+These should lend themselves nicely to further experiments.
+
+## 50
+
+```
+      case ' ':
+      case '\r':
+      case '\t':
+        // Ignore whitespace.
+        break
+
+      case '\n':
+        this.line += 1
+        break
+```
+
+```
+// this is a comment
+(( )){} // grouping stuff
+!*+-/=<> <= == // operators
+```
+
+```
+      case '"': this.string(); break
+```
+
+---
+
+A list of tokens serialized to a Jevko format could look like this:
+
+```
+line comment[ this is a comment]
+left paren[] left paren[] space[ ] right paren[] right paren[]
+left brace[] right brace[] line comment[ grouping stuff]
+bang[] star[] plus[] minus[] slash[] equals[] less[] greater[]
+less equal[] equal equal[] line comment[ operators]
+```
+
+Or like this, with position information:
+
+```
+line comment[
+  value[ this is a comment] 
+  from[index[0] line[1] column[1]] 
+  thru[index[...] ...]
+]
+left paren[at[index[...] line[...] column[...]]] 
+left paren[at[...]] 
+space[value[ ] from[...] thru[...]] 
+right paren[at[...]] 
+right paren[at[...]]
+left brace[at[...]] 
+right brace[at[...]] 
+line comment[value[ grouping stuff] from[...] thru[...]]
+bang[at[...]] 
+star[at[...]]
+plus[at[...]]
+minus[at[...]]
+slash[at[...]]
+equals[at[...]]
+less[at[...]]
+greater[at[...]]
+less equal[at[...] length[2]]
+equal equal[at[...] length[2]]
+line comment[value[ operators] from[...] thru[...]]
+```
+
+## 51
+
+```
+  private string() {
+    while (this.peek() !== '"' && !this.isAtEnd()) {
+      if (this.peek() === '\n') this.line += 1
+      this.advance()
+    }
+
+    if (this.isAtEnd()) {
+      Jevlox.error(this.line, "Unterminated string.")
+      return
+    }
+
+    this.advance() // The closing "
+
+    // Trim the surrounding quotes.
+    const value = this.source.slice(this.start + 1, this.current - 1)
+    this.addToken(TokenType.String, value)
+  }
+```
+
+```
+1234
+12.34
+```
+
+```
+.1234
+1234.
+```
+
+```
+print -123.abs();
+```
+
+```
+var n = 123;
+print -n.abs();
+```
+
+---
+
+This is how the above may look like in Jevlox:
+
+```
+[1234]
+[12.34]
+```
+
+```
+[.1234]
+[1234.]
+```
+
+```
+/print[-[123].[abs]\[]]
+```
+
+```
+[n].let[123]
+/print[-[n].[abs]\[]]
+```
+
+---
+
+This is how Lox AST serialization may look like:
+
+```
+/number[1234]
+/number[12.34]
+/print[
+  /call[
+    /dot[
+      /minus[/number[123]]
+      /identifier[abs]
+    ]
+  ]
+]
+```

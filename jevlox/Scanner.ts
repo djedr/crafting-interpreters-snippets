@@ -1,4 +1,4 @@
-import { Token } from "./Token.js"
+import { Literal, Token } from "./Token.js"
 import { TokenType } from "./TokenType.js"
 import { Jevlox } from "./jevlox.js"
 
@@ -56,6 +56,18 @@ export class Scanner {
         }
         break
 
+      case ' ':
+      case '\r':
+      case '\t':
+        // Ignore whitespace.
+        break
+
+      case '\n':
+        this.line += 1
+        break
+
+      case '"': this.string(); break
+
       // Jevlox additions:
       case '[': this.addToken(TokenType.LeftBracket); break
       case ']': this.addToken(TokenType.RightBracket); break
@@ -85,8 +97,26 @@ export class Scanner {
     return this.source.charAt(this.current++)
   }
 
-  private addToken(type: TokenType, literal: object | null = null) {
+  private addToken(type: TokenType, literal: Literal = null) {
     const text = this.source.slice(this.start, this.current)
     this.tokens.push(new Token(type, text, literal, this.line))
+  }
+
+  private string() {
+    while (this.peek() !== '"' && !this.isAtEnd()) {
+      if (this.peek() === '\n') this.line += 1
+      this.advance()
+    }
+
+    if (this.isAtEnd()) {
+      Jevlox.error(this.line, "Unterminated string.")
+      return
+    }
+
+    this.advance() // The closing ".
+
+    // Trim the surrounding quotes.
+    const value = this.source.slice(this.start + 1, this.current - 1)
+    this.addToken(TokenType.String, value)
   }
 }
