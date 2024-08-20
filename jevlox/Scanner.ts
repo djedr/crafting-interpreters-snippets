@@ -46,6 +46,15 @@ export class Scanner {
       case '=': this.addToken(this.match('=') ? TokenType.EqualEqual : TokenType.Equal); break
       case '<': this.addToken(this.match('=') ? TokenType.LessEqual : TokenType.Less); break
       case '>': this.addToken(this.match('=') ? TokenType.GreaterEqual : TokenType.Greater); break
+      case '/':
+        if (this.match('/')) {
+          // A comment goes until the end of the line.
+          while (this.peek() !== '\n' && !this.isAtEnd()) this.advance()
+        }
+        else {
+          this.addToken(TokenType.Slash)
+        }
+        break
 
       // Jevlox additions:
       case '[': this.addToken(TokenType.LeftBracket); break
@@ -60,8 +69,16 @@ export class Scanner {
   }
 
   private match(expected: string) {
-    // TODO
-    return false
+    if (this.isAtEnd()) return false
+    if (this.source.charAt(this.current) !== expected) return false
+
+    this.current += 1
+    return true
+  }
+
+  private peek() {
+    if (this.isAtEnd()) return '\0'
+    return this.source.charAt(this.current)
   }
 
   private advance() {

@@ -614,3 +614,34 @@ export class Scanner {
       case '<': this.addToken(this.match('=') ? TokenType.LessEqual : TokenType.Less); break
       case '>': this.addToken(this.match('=') ? TokenType.GreaterEqual : TokenType.Greater); break
 ```
+
+## 49
+
+```
+  private match(expected: string) {
+    if (this.isAtEnd()) return false
+    if (this.source.charAt(this.current) !== expected) return false
+
+    this.current += 1
+    return true
+  }
+```
+
+```
+      case '/':
+        if (this.match('/')) {
+          // A comment goes until the end of the line.
+          while (this.peek() !== '\n' && !this.isAtEnd()) this.advance()
+        }
+        else {
+          this.addToken(TokenType.Slash)
+        }
+        break
+```
+
+```
+  private peek() {
+    if (this.isAtEnd()) return '\0'
+    return this.source.charAt(this.current)
+  }
+```
