@@ -797,3 +797,46 @@ This is how Lox AST serialization may look like:
   ]
 ]
 ```
+
+## 52
+
+```
+        if (this.isDigit(c)) {
+          this.number()
+        }
+        else {
+          Jevlox.error(this.line, "Unexpected character.")
+        }
+```
+
+```
+  private isDigit(c: string) {
+    return c >= '0' && c <= '9'
+  }
+```
+
+```
+  private number() {
+    while (this.isDigit(this.peek())) this.advance()
+    
+    // Look for a fractional part.
+    if (this.peek() === '.' && this.isDigit(this.peekNext())) {
+      // Consume the "."
+      this.advance()
+
+      while (this.isDigit(this.peek())) this.advance() 
+    }
+
+    this.addToken(
+      TokenType.Number, 
+      Number.parseFloat(this.source.slice(this.start, this.current)),
+    )
+  }
+```
+
+```
+  private peekNext() {
+    if (this.current + 1 >= this.source.length) return '\0'
+    return this.source.charAt(this.current + 1)
+  }
+```
