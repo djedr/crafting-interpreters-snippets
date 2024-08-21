@@ -840,3 +840,70 @@ This is how Lox AST serialization may look like:
     return this.source.charAt(this.current + 1)
   }
 ```
+
+## 53
+
+```
+case 'o':
+  if (this.match('r)) {
+    this.addToken(TokenType.Or)
+  }
+  break
+```
+
+```
+        else if (this.isAlpha(c)) {
+          this.identifier()
+        }
+```
+
+```
+  private identifier() {
+    while (this.isAlphaNumeric(this.peek())) this.advance()
+
+    this.addToken(TokenType.Identifier)
+  }
+```
+
+```
+  private isAlpha(c: string) {
+    return (c >= 'a' && c <= 'z') ||
+           (c >= 'A' && c <= 'Z') ||
+            c == '_'
+  }
+```
+
+## 54
+
+```
+  private isAlphaNumeric(c: string) {
+    return this.isAlpha(c) || this.isDigit(c)
+  }
+```
+
+```
+  private static keywords = new Map([
+    ["and", TokenType.And],
+    ["class", TokenType.Class],
+    ["else", TokenType.Else],
+    ["false", TokenType.False],
+    ["for", TokenType.For],
+    ["fun", TokenType.Fun],
+    ["if", TokenType.If],
+    ["nil", TokenType.Nil],
+    ["or", TokenType.Or],
+    ["print", TokenType.Print],
+    ["return", TokenType.Return],
+    ["super", TokenType.Super],
+    ["this", TokenType.This],
+    ["true", TokenType.True],
+    ["var", TokenType.Var],
+    ["while", TokenType.While],
+  ])
+```
+
+```
+    const text = this.source.slice(this.start, this.current)
+    const type = Scanner.keywords.get(text) ?? TokenType.Identifier
+    this.addToken(type)
+```

@@ -3,6 +3,25 @@ import { TokenType } from "./TokenType.js"
 import { Jevlox } from "./jevlox.js"
 
 export class Scanner {
+  private static keywords = new Map([
+    ["and", TokenType.And],
+    ["class", TokenType.Class],
+    ["else", TokenType.Else],
+    ["false", TokenType.False],
+    ["for", TokenType.For],
+    ["fun", TokenType.Fun],
+    ["if", TokenType.If],
+    ["nil", TokenType.Nil],
+    ["or", TokenType.Or],
+    ["print", TokenType.Print],
+    ["return", TokenType.Return],
+    ["super", TokenType.Super],
+    ["this", TokenType.This],
+    ["true", TokenType.True],
+    ["var", TokenType.Var],
+    ["while", TokenType.While],
+  ])
+
   private source: string
   private tokens: Token[] = []
   private start: number = 0
@@ -78,11 +97,22 @@ export class Scanner {
         if (this.isDigit(c)) {
           this.number()
         }
+        else if (this.isAlpha(c)) {
+          this.identifier()
+        }
         else {
           Jevlox.error(this.line, "Unexpected character.")
         }
         break
     }
+  }
+
+  private identifier() {
+    while (this.isAlphaNumeric(this.peek())) this.advance()
+
+    const text = this.source.slice(this.start, this.current)
+    const type = Scanner.keywords.get(text) ?? TokenType.Identifier
+    this.addToken(type)
   }
   
   private number() {
@@ -136,6 +166,16 @@ export class Scanner {
   private peekNext() {
     if (this.current + 1 >= this.source.length) return '\0'
     return this.source.charAt(this.current + 1)
+  }
+
+  private isAlpha(c: string) {
+    return (c >= 'a' && c <= 'z') ||
+           (c >= 'A' && c <= 'Z') ||
+            c == '_'
+  }
+
+  private isAlphaNumeric(c: string) {
+    return this.isAlpha(c) || this.isDigit(c)
   }
 
   private isDigit(c: string) {
