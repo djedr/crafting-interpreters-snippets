@@ -907,3 +907,64 @@ case 'o':
     const type = Scanner.keywords.get(text) ?? TokenType.Identifier
     this.addToken(type)
 ```
+
+## 56
+
+```
+if[condition]./[
+  return
+  ['value]
+]
+```
+
+```
+func
+[parenthesized]
+```
+
+```
+[first]
+.-[second]
+```
+
+```
+[a]./set[1] [b]./set[2]
+```
+
+## 57
+
+```
+[console].[log]\[function[]./[
+  statement[]
+]]
+```
+
+## 59
+
+```
+[1].+[2].*[3].-[4]
+```
+
+## 64
+
+```
+[1].-[[2].*[3]].<[4].=[false]
+```
+
+## 65
+
+```ts
+abstract class Expr {}
+class Binary extends Expr {
+  constructor(left: Expr, operator: Token, right: Expr) {
+    this.left = left
+    this.operator = operator
+    this.right = right
+  }
+
+  readonly left: Expr
+  readonly operator: Token
+  readonly right: Expr
+}
+// Other expressions...
+```
