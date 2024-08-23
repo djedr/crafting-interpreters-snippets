@@ -1122,3 +1122,43 @@ accept(visitor: PastryVisitor): void {
   visitor.visitCruller(this)
 }
 ```
+
+## 73
+
+```
+${this.defineVisitor(baseName, types)}
+```
+
+```
+  private static defineVisitor(
+    baseName: string,
+    types: string[],
+  ) {
+    let output = 
+`export interface Visitor<R> {
+${(() => {
+  let ret = ''
+  for (const type of types) {
+    const typeName = type.split(':')[0].trim()
+    ret += `  visit${typeName}${baseName}(${baseName.toLocaleLowerCase()}: ${typeName}): R\n`
+  }
+  return ret
+})()}}`
+
+    return output
+  }
+```
+
+```
+export abstract class ${baseName} {
+  abstract accept<R>(visitor: Visitor<R>): R
+}
+```
+
+The previous definitions of Expr, etc. should be updated. Maybe later. Maybe never. Anyway GenerateAst.ts and Expr.ts are always up-to-date.
+
+```
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visit${className}${baseName}(this)
+  }
+```

@@ -27,6 +27,9 @@ export class GenerateAst {
 import { Literal as Lit } from "./Token.js"
 
 export abstract class ${baseName} {
+  abstract accept<R>(visitor: Visitor<R>): R
+}
+${this.defineVisitor(baseName, types)}
 ${(() => {
   let ret = ''
   for (const type of types) {
@@ -35,11 +38,27 @@ ${(() => {
     ret += this.defineType(baseName, className, fields)
   }
   return ret
-})()}
-}
-`
+})()}`
 
     fs.writeFileSync(path, output)
+  }
+
+  private static defineVisitor(
+    baseName: string,
+    types: string[],
+  ) {
+    let output = 
+`export interface Visitor<R> {
+${(() => {
+  let ret = ''
+  for (const type of types) {
+    const typeName = type.split(':')[0].trim()
+    ret += `  visit${typeName}${baseName}(${baseName.toLocaleLowerCase()}: ${typeName}): R\n`
+  }
+  return ret
+})()}}`
+
+    return output
   }
 
   private static defineType(
@@ -49,7 +68,7 @@ ${(() => {
   ) {
     const fields = fieldList.split(', ')
     let output =
-`static ${className} = class extends ${baseName} {
+`export class ${className} extends ${baseName} {
   constructor(${
     fields.map(field => {
       const [type, name] = field.split(" ")
@@ -64,7 +83,9 @@ ${(() => {
     ret += `    this.${name} = ${name}\n`
   }
   return ret
-})()}
+})()}  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visit${className}${baseName}(this)
   }
 ${(() => {
   let ret = ''
