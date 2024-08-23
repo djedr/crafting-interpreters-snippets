@@ -26,7 +26,7 @@ export class GenerateAst {
 `import { Token } from "./Token.js"
 import { Literal as Lit } from "./Token.js"
 
-export abstract class ${baseName} {}
+export abstract class ${baseName} {
 ${(() => {
   let ret = ''
   for (const type of types) {
@@ -36,6 +36,7 @@ ${(() => {
   }
   return ret
 })()}
+}
 `
 
     fs.writeFileSync(path, output)
@@ -48,7 +49,7 @@ ${(() => {
   ) {
     const fields = fieldList.split(', ')
     let output =
-`export class ${className} extends ${baseName} {
+`static ${className} = class extends ${baseName} {
   constructor(${
     fields.map(field => {
       const [type, name] = field.split(" ")

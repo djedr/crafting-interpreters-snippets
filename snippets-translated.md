@@ -1070,3 +1070,55 @@ ${(() => {
     return output
   }
 ```
+
+## 69
+
+```
+if (expr instanceof Expr.Binary) {
+  // ...
+}
+else if (expr instanceof Expr.Grouping) {
+  // ...
+}
+else {
+  // ...
+}
+```
+
+## 71
+
+```
+abstract class Pastry {
+}
+
+class Beignet extends Pastry {
+}
+
+class Cruller extends Pastry {
+}
+```
+
+```
+interface PastryVisitor {
+  visitBeignet(beignet: Beignet): void
+  visitCruller(cruller: Cruller): void
+}
+```
+
+```
+abstract accept(visitor: PastryVisitor): void
+```
+
+## 72
+
+```
+accept(visitor: PastryVisitor): void {
+  visitor.visitBeignet(this)
+}
+```
+
+```
+accept(visitor: PastryVisitor): void {
+  visitor.visitCruller(this)
+}
+```

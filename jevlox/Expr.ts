@@ -1,8 +1,8 @@
 import { Token } from "./Token.js"
 import { Literal as Lit } from "./Token.js"
 
-export abstract class Expr {}
-export class Binary extends Expr {
+export abstract class Expr {
+static Binary = class extends Expr {
   constructor(left: Expr, operator: Token, right: Expr) {
     super()
     this.left = left
@@ -14,7 +14,7 @@ export class Binary extends Expr {
   readonly operator: Token
   readonly right: Expr
 }
-export class Grouping extends Expr {
+static Grouping = class extends Expr {
   constructor(expression: Expr) {
     super()
     this.expression = expression
@@ -22,7 +22,7 @@ export class Grouping extends Expr {
   }
   readonly expression: Expr
 }
-export class Literal extends Expr {
+static Literal = class extends Expr {
   constructor(value: Lit) {
     super()
     this.value = value
@@ -30,7 +30,7 @@ export class Literal extends Expr {
   }
   readonly value: Lit
 }
-export class Unary extends Expr {
+static Unary = class extends Expr {
   constructor(operator: Token, right: Expr) {
     super()
     this.operator = operator
@@ -41,3 +41,4 @@ export class Unary extends Expr {
   readonly right: Expr
 }
 
+}
