@@ -1162,3 +1162,87 @@ The previous definitions of Expr, etc. should be updated. Maybe later. Maybe nev
     return visitor.visit${className}${baseName}(this)
   }
 ```
+
+## 74
+
+```
+/star[ /minus[123] /group[45.67] ]
+```
+
+```
+import * as Expr from './Expr.js'
+
+export class AstPrinter implements Expr.Visitor<string> {
+  print(expr: Expr.Expr) {
+    return expr.accept(this)
+  }
+}
+```
+
+## 75
+
+```
+  visitBinaryExpr(expr: Expr.Binary): string {
+    return this.parenthesize(expr.operator.lexeme, expr.left, expr.right)
+  }
+
+  visitGroupingExpr(expr: Expr.Grouping): string {
+    return this.parenthesize("group", expr.expression)
+  }
+
+  visitLiteralExpr(expr: Expr.Literal): string {
+    if (expr.value === null) return "nil"
+    return expr.value.toString()
+  }
+  
+  visitUnaryExpr(expr: Expr.Unary): string {
+    return this.parenthesize(expr.operator.lexeme, expr.right)
+  }
+```
+
+Parenthesizing to a Jevko format:
+
+```
+  private parenthesize(name: string, ...exprs: Expr.Expr[]) {
+    let output = ''
+
+    output += `${name}[`
+    for (const expr of exprs) {
+      output += ' '
+      output += expr.accept(this)
+    }
+    output += ' ]'
+
+    return output
+  }
+```
+
+```
+/plus[ [1] [2] ]
+```
+
+## 76
+
+In a separate file, e.g. `runAstPrinter.ts`:
+
+```
+import { AstPrinter } from "./AstPrinter.js"
+import * as Expr from "./Expr.js"
+import { Token } from "./Token.js"
+import { TokenType } from "./TokenType.js"
+
+const expression = new Expr.Binary(
+  new Expr.Unary(
+    new Token(TokenType.Minus, "-", null, 1),
+    new Expr.Literal(123),
+  ),
+  new Token(TokenType.Star, "*", null, 1),
+  new Expr.Grouping(new Expr.Literal(45.67))
+)
+
+console.log(new AstPrinter().print(expression))
+```
+
+```
+/star[ /minus[123] /group[45.67] ]
+```
