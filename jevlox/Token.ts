@@ -1,6 +1,6 @@
 import { TokenType } from "./TokenType.js";
 
-export type Literal = string | number | null
+export type Literal = string | number | null | true | false
 
 export class Token {
   type: TokenType

@@ -2,6 +2,10 @@ import * as fs from 'node:fs'
 
 import * as readline from 'node:readline';
 import { Scanner } from './Scanner.js';
+import { Token } from './Token.js';
+import { TokenType } from './TokenType.js';
+import { Parser } from './Parser.js';
+import { AstPrinter } from './AstPrinter.js';
 
 // workaround for a bug in readline: https://github.com/nodejs/node/issues/53497
 const readLine = (() => {
@@ -55,11 +59,13 @@ export class Jevlox {
   private static run(source: string) {
     const scanner = new Scanner(source)
     const tokens = scanner.scanTokens()
+    const parser = new Parser(tokens)
+    const expression = parser.parse()
 
-    // For now, just print the tokens.
-    for (const token of tokens) {
-      console.log(token)
-    }
+    // Stop if there was a syntax error.
+    if (this.hadError) return
+
+    console.log(new AstPrinter().print(expression))
   }
 
   static error(line: number, message: string) {
@@ -69,5 +75,14 @@ export class Jevlox {
   private static report(line: number, where: string, message: string) {
     console.error(`[line ${line}] Error${where}: ${message}`)
     Jevlox.hadError = true
+  }
+
+  static errorToken(token: Token, message: string) {
+    if (token.type === TokenType.Eof) {
+      this.report(token.line, " at end", message)
+    }
+    else {
+      this.report(token.line, ` at '${token.lexeme}'`, message)
+    }
   }
 }
