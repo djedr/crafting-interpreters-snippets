@@ -1,7 +1,8 @@
 import assert from 'assert'
 import * as Expr from './Expr.js'
-import { Literal } from './Token.js'
+import { Literal, Token } from './Token.js'
 import { TokenType } from './TokenType.js'
+import { RuntimeError } from './RuntimeError.js'
 
 // todo: change accordingly
 type Value = Literal
@@ -17,24 +18,24 @@ export class Interpreter implements Expr.Visitor<Value> {
 
     switch (expr.operator.type) {
       case TokenType.Greater:
-        assert(typeof left === 'number' && typeof right === 'number')
-        return left > right
+        this.checkNumberOperands(expr.operator, left, right)
+        return left > (right as number)
       case TokenType.GreaterEqual:
-        assert(typeof left === 'number' && typeof right === 'number')
-        return left >= right
+        this.checkNumberOperands(expr.operator, left, right)
+        return left >= (right as number)
       case TokenType.Less:
-        assert(typeof left === 'number' && typeof right === 'number')
-        return left < right
+        this.checkNumberOperands(expr.operator, left, right)
+        return left < (right as number)
       case TokenType.LessEqual:
-        assert(typeof left === 'number' && typeof right === 'number')
-        return left <= right
+        this.checkNumberOperands(expr.operator, left, right)
+        return left <= (right as number)
       case TokenType.BangEqual:
         return !this.isEqual(left, right)
       case TokenType.EqualEqual:
         return this.isEqual(left, right)
       case TokenType.Minus:
-        assert(typeof left === 'number' && typeof right === 'number')
-        return left - right
+        this.checkNumberOperands(expr.operator, left, right)
+        return left - (right as number)
       case TokenType.Plus:
         if (typeof left === 'number' && typeof right === 'number') {
           return left + right
@@ -46,11 +47,11 @@ export class Interpreter implements Expr.Visitor<Value> {
 
         break
       case TokenType.Slash:
-        assert(typeof left === 'number' && typeof right === 'number')
-        return left / right
+        this.checkNumberOperands(expr.operator, left, right)
+        return left / (right as number)
       case TokenType.Star:
-        assert(typeof left === 'number' && typeof right === 'number')
-        return left * right
+        this.checkNumberOperands(expr.operator, left, right)
+        return left * (right as number)
     }
 
     // Unreachable.
@@ -67,7 +68,7 @@ export class Interpreter implements Expr.Visitor<Value> {
 
     switch (expr.operator.type) {
       case TokenType.Minus:
-        assert(typeof right === 'number')
+        this.checkNumberOperand(expr.operator, right)
         return -right
       case TokenType.Bang:
         return !this.isTruthy(right)
@@ -75,6 +76,17 @@ export class Interpreter implements Expr.Visitor<Value> {
 
     // Unreachable.
     return null
+  }
+
+  private checkNumberOperand(operator: Token, operand: Value): asserts operand is number {
+    if (typeof operand === 'number') return
+    throw new RuntimeError(operator, "Operand must be a number.")
+  }
+
+  // note: TypeScript does not allow assertions on > 1 value
+  private checkNumberOperands(operator: Token, left: Value, right: Value): asserts left is number {
+    if (typeof left === 'number' && typeof right === 'number') return
+    throw new RuntimeError(operator, "Operands must be numbers.")
   }
 
   private isTruthy(value: Value) {
