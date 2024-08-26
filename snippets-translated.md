@@ -1487,3 +1487,141 @@ class ParseError extends Error {}
 
     console.log(new AstPrinter().print(expression))
 ```
+
+## 99
+
+```
+import assert from 'assert'
+import * as Expr from './Expr.js'
+import { Literal } from './Token.js'
+import { TokenType } from './TokenType.js'
+
+type Value = Literal
+
+export class Interpreter implements Expr.Visitor<Value> {
+}
+```
+
+```
+  visitLiteralExpr(expr: Expr.Literal): Value {
+    return expr.value
+  }
+```
+
+## 100
+
+```
+  visitGroupingExpr(expr: Expr.Grouping): Value {
+    return this.evaluate(expr.expression)
+  }
+```
+
+```
+  private evaluate(expr: Expr.Expr) {
+    return expr.accept(this)
+  }
+```
+
+```
+  visitUnaryExpr(expr: Expr.Unary): Value {
+    const right = this.evaluate(expr.right)
+
+    switch (expr.operator.type) {
+      case TokenType.Minus:
+        assert(typeof right === 'number')
+        return -right
+    }
+
+    // Unreachable.
+    return null
+  }
+```
+
+## 101
+
+```
+      case TokenType.Bang:
+        return !this.isTruthy(right)
+```
+
+```
+  private isTruthy(value: Value) {
+    if (value === null) return false
+    if (typeof value === 'boolean') return value
+    return true
+  }
+```
+
+```
+  visitBinaryExpr(expr: Expr.Binary): Value {
+    const left = this.evaluate(expr.left)
+    const right = this.evaluate(expr.right)
+
+    switch (expr.operator.type) {
+      case TokenType.Minus:
+        assert(typeof left === 'number' && typeof right === 'number')
+        return left - right
+      case TokenType.Slash:
+```
+
+## 102
+
+```
+        assert(typeof left === 'number' && typeof right === 'number')
+        return left / right
+      case TokenType.Star:
+        assert(typeof left === 'number' && typeof right === 'number')
+        return left * right
+    }
+
+    // Unreachable.
+    return null
+  }
+```
+
+```
+      case TokenType.Plus:
+        if (typeof left === 'number' && typeof right === 'number') {
+          return left + right
+        }
+
+        if (typeof left === 'string' && typeof right === 'string') {
+          return left + right
+        }
+
+        break
+```
+
+```
+      case TokenType.Greater:
+        assert(typeof left === 'number' && typeof right === 'number')
+        return left > right
+      case TokenType.GreaterEqual:
+        assert(typeof left === 'number' && typeof right === 'number')
+        return left >= right
+      case TokenType.Less:
+        assert(typeof left === 'number' && typeof right === 'number')
+        return left < right
+      case TokenType.LessEqual:
+        assert(typeof left === 'number' && typeof right === 'number')
+        return left <= right
+```
+
+```
+      case TokenType.BangEqual: return !this.isEqual(left, right)
+      case TokenType.EqualEqual: return this.isEqual(left, right)
+```
+
+## 103
+
+
+```
+  private isEqual(a: Value, b: Value) {
+    // note: this is not like in Java:
+    return a === b
+  }
+```
+
+```
+[2].*[[3]./[-['muffin]]]
+```
