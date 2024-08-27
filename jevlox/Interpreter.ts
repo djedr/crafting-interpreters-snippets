@@ -3,11 +3,25 @@ import * as Expr from './Expr.js'
 import { Literal, Token } from './Token.js'
 import { TokenType } from './TokenType.js'
 import { RuntimeError } from './RuntimeError.js'
+import { Jevlox } from './jevlox.js'
 
 // todo: change accordingly
 type Value = Literal
 
 export class Interpreter implements Expr.Visitor<Value> {
+  interpret(expression: Expr.Expr) {
+    try {
+      const value = this.evaluate(expression)
+      console.log(this.stringify(value))
+    }
+    catch (error) {
+      if (error instanceof RuntimeError) {
+        Jevlox.runtimeError(error)
+      }
+      else throw error
+    }
+  }
+
   private evaluate(expr: Expr.Expr) {
     return expr.accept(this)
   }
@@ -45,7 +59,10 @@ export class Interpreter implements Expr.Visitor<Value> {
           return left + right
         }
 
-        break
+        throw new RuntimeError(
+          expr.operator,
+          "Operands must be two numbers or two strings.",
+        )
       case TokenType.Slash:
         this.checkNumberOperands(expr.operator, left, right)
         return left / (right as number)
@@ -98,5 +115,19 @@ export class Interpreter implements Expr.Visitor<Value> {
   private isEqual(a: Value, b: Value) {
     // note: this is not like in Java:
     return a === b
+  }
+
+  private stringify(value: Value): string {
+    if (value === null) return 'nil'
+
+    if (typeof value === 'number') {
+      let text = value.toString()
+      if (text.endsWith(".0")) {
+        text = text.slice(0, -2)
+      }
+      return text
+    }
+
+    return value.toString()
   }
 }

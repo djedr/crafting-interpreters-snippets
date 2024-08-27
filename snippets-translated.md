@@ -1625,3 +1625,76 @@ export class Interpreter implements Expr.Visitor<Value> {
 ```
 [2].*[[3]./[-['muffin]]]
 ```
+
+## 104
+
+```
+        this.checkNumberOperand(expr.operator, right)
+```
+
+```
+  private checkNumberOperand(operator: Token, operand: Value): asserts operand is number {
+    if (typeof operand === 'number') return
+    throw new RuntimeError(operator, "Operand must be a number.")
+  }
+```
+
+```
+import { Token } from "./Token.js";
+
+export class RuntimeError extends Error {
+  readonly token: Token
+
+  constructor(token: Token, message: string) {
+    super(message)
+    this.token = token
+  }
+}
+```
+
+## 105
+
+
+```
+        this.checkNumberOperands(expr.operator, left, right)
+        return left > (right as number)
+```
+
+```
+        this.checkNumberOperands(expr.operator, left, right)
+        return left >= (right as number)
+```
+
+```
+        this.checkNumberOperands(expr.operator, left, right)
+        return left < (right as number)
+```
+
+```
+        this.checkNumberOperands(expr.operator, left, right)
+        return left <= (right as number)
+```
+
+```
+        this.checkNumberOperands(expr.operator, left, right)
+        return left - (right as number)
+```
+
+```
+        this.checkNumberOperands(expr.operator, left, right)
+        return left / (right as number)
+```
+
+```
+        this.checkNumberOperands(expr.operator, left, right)
+        return left * (right as number)
+```
+
+```
+  private checkNumberOperands(operator: Token, left: Value, right: Value): asserts left is number {
+    if (typeof left === 'number' && typeof right === 'number') return
+    throw new RuntimeError(operator, "Operands must be numbers.")
+  }
+```
+
+TypeScript does not allow type assertions on > 1 value. This is why in the above `right` had to be casted to `number` in all cases.

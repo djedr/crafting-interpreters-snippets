@@ -6,6 +6,8 @@ import { Token } from './Token.js';
 import { TokenType } from './TokenType.js';
 import { Parser } from './Parser.js';
 import { AstPrinter } from './AstPrinter.js';
+import { RuntimeError } from './RuntimeError.js';
+import { Interpreter } from './Interpreter.js';
 
 // workaround for a bug in readline: https://github.com/nodejs/node/issues/53497
 const readLine = (() => {
@@ -25,7 +27,9 @@ const readLine = (() => {
 })()
 
 export class Jevlox {
+  private static readonly interpreter: Interpreter = new Interpreter()
   static hadError: boolean = false
+  static hadRuntimeError: boolean = false
 
   static async main(args: string[]) {
     if (args.length > 1) {
@@ -45,6 +49,7 @@ export class Jevlox {
 
     // Indicate an error in the exit code
     if (this.hadError) process.exit(65)
+    if (this.hadRuntimeError) process.exit(70)
   }
 
   private static async runPrompt() {
@@ -65,7 +70,7 @@ export class Jevlox {
     // Stop if there was a syntax error.
     if (this.hadError) return
 
-    console.log(new AstPrinter().print(expression))
+    this.interpreter.interpret(expression)
   }
 
   static error(line: number, message: string) {
@@ -84,5 +89,10 @@ export class Jevlox {
     else {
       this.report(token.line, ` at '${token.lexeme}'`, message)
     }
+  }
+
+  static runtimeError(error: RuntimeError) {
+    console.error(`${error.message}\n[line ${error.token.line}]`)
+    this.hadRuntimeError = true
   }
 }
