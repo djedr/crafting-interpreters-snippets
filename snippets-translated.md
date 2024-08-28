@@ -1698,3 +1698,70 @@ export class RuntimeError extends Error {
 ```
 
 TypeScript does not allow type assertions on > 1 value. This is why in the above `right` had to be casted to `number` in all cases.
+
+## 106
+
+```
+        throw new RuntimeError(
+          expr.operator,
+          "Operands must be two numbers or two strings.",
+        )
+```
+
+```
+  interpret(expression: Expr.Expr) {
+    try {
+      const value = this.evaluate(expression)
+      console.log(this.stringify(value))
+    }
+    catch (error) {
+      if (error instanceof RuntimeError) {
+        Jevlox.runtimeError(error)
+      }
+      else throw error
+    }
+  }
+```
+
+```
+  private stringify(value: Value): string {
+    if (value === null) return 'nil'
+
+    if (typeof value === 'number') {
+      let text = value.toString()
+      if (text.endsWith(".0")) {
+        text = text.slice(0, -2)
+      }
+      return text
+    }
+
+    return value.toString()
+  }
+```
+
+## 107
+
+```
+  static runtimeError(error: RuntimeError) {
+    console.error(`${error.message}\n[line ${error.token.line}]`)
+    this.hadRuntimeError = true
+  }
+```
+
+```
+  static hadRuntimeError: boolean = false
+```
+
+```
+    if (this.hadRuntimeError) process.exit(70)
+```
+
+## 108
+
+```
+  private static readonly interpreter: Interpreter = new Interpreter()
+```
+
+```
+    this.interpreter.interpret(expression)
+```
