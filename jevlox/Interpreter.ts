@@ -1,5 +1,5 @@
-import assert from 'assert'
 import * as Expr from './Expr.js'
+import * as Stmt from './Stmt.js'
 import { Literal, Token } from './Token.js'
 import { TokenType } from './TokenType.js'
 import { RuntimeError } from './RuntimeError.js'
@@ -8,11 +8,12 @@ import { Jevlox } from './jevlox.js'
 // todo: change accordingly
 type Value = Literal
 
-export class Interpreter implements Expr.Visitor<Value> {
-  interpret(expression: Expr.Expr) {
+export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
+  interpret(statements: Stmt.Stmt[]) {
     try {
-      const value = this.evaluate(expression)
-      console.log(this.stringify(value))
+      for (const statement of statements) {
+        this.execute(statement)
+      }
     }
     catch (error) {
       if (error instanceof RuntimeError) {
@@ -24,6 +25,20 @@ export class Interpreter implements Expr.Visitor<Value> {
 
   private evaluate(expr: Expr.Expr) {
     return expr.accept(this)
+  }
+
+  private execute(stmt: Stmt.Stmt) {
+    stmt.accept(this)
+  }
+
+  visitExpressionStmt(stmt: Stmt.Expression): void {
+    this.evaluate(stmt.expression)
+    return undefined
+  }
+  visitPrintStmt(stmt: Stmt.Print): void {
+    const value = this.evaluate(stmt.expression)
+    console.log(this.stringify(value))
+    return undefined
   }
 
   visitBinaryExpr(expr: Expr.Binary): Value {

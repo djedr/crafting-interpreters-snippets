@@ -12,19 +12,25 @@ export class GenerateAst {
       "Grouping : Expr expression",
       "Literal  : Lit value",
       "Unary    : Token operator, Expr right",
-    ])
+    ], `import { Token } from "./Token.js"
+import { Literal as Lit } from "./Token.js"`)
+
+    this.defineAst(outputDir, "Stmt", [
+      "Expression : Expr expression",
+      "Print      : Expr expression"
+    ], "import {Expr} from './Expr.js'")
   }
 
   private static defineAst(
     outputDir: string,
     baseName: string,
     types: string[],
+    prepend: string = ''
   ) {
     const path = outputDir + "/" + baseName + ".ts"
 
     let output = 
-`import { Token } from "./Token.js"
-import { Literal as Lit } from "./Token.js"
+`${prepend}
 
 export abstract class ${baseName} {
   abstract accept<R>(visitor: Visitor<R>): R

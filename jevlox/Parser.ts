@@ -1,5 +1,6 @@
 import * as Expr from "./Expr.js"
 import { Jevlox } from "./jevlox.js"
+import { Expression, Print, Stmt } from "./Stmt.js"
 import { Token } from "./Token.js"
 import { TokenType } from "./TokenType.js"
 
@@ -13,18 +14,34 @@ export class Parser {
     this.tokens = tokens
   }
 
-  parse(): Expr.Expr {
-    try {
-      return this.expression()
+  parse(): Stmt[] {
+    const statements: Stmt[] = []
+    while (!this.isAtEnd()) {
+      statements.push(this.statement())
     }
-    catch (error) {
-      if (error instanceof ParseError) return null
-      throw error
-    }
+    return statements
   }
 
   private expression(): Expr.Expr {
     return this.equality()
+  }
+
+  private statement(): Stmt {
+    if (this.match(TokenType.Print)) return this.printStatement()
+
+    return this.expressionStatement()
+  }
+
+  private printStatement(): Stmt {
+    const value: Expr.Expr = this.expression()
+    this.consume(TokenType.Semicolon, "Expect ';' after value.")
+    return new Print(value)
+  }
+
+  private expressionStatement(): Stmt {
+    const expr = this.expression()
+    this.consume(TokenType.Semicolon, "Expect ';' after expression.")
+    return new Expression(expr)
   }
 
   private equality(): Expr.Expr {
