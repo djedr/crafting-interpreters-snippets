@@ -18,7 +18,7 @@ import { Literal as Lit } from "./Token.js"`)
     this.defineAst(outputDir, "Stmt", [
       "Expression : Expr expression",
       "Print      : Expr expression"
-    ], "import {Expr} from './Expr.js'")
+    ], "import { Expr } from './Expr.js'")
   }
 
   private static defineAst(

@@ -3,7 +3,7 @@ import * as Stmt from './Stmt.js'
 import { Literal, Token } from './Token.js'
 import { TokenType } from './TokenType.js'
 import { RuntimeError } from './RuntimeError.js'
-import { Jevlox } from './jevlox.js'
+import { Jevlox } from './Jevlox.js'
 
 // todo: change accordingly
 type Value = Literal

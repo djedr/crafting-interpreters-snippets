@@ -1765,3 +1765,118 @@ TypeScript does not allow type assertions on > 1 value. This is why in the above
 ```
     this.interpreter.interpret(expression)
 ```
+
+## 113
+
+```
+    this.defineAst(outputDir, "Stmt", [
+      "Expression : Expr expression",
+      "Print      : Expr expression"
+    ], "import { Expr } from './Expr.js'")
+```
+
+```
+  parse(): Stmt[] {
+    const statements: Stmt[] = []
+    while (!this.isAtEnd()) {
+      statements.push(this.statement())
+    }
+    return statements
+  }
+```
+
+## 114
+
+```
+  private statement(): Stmt {
+    if (this.match(TokenType.Print)) return this.printStatement()
+
+    return this.expressionStatement()
+  }
+```
+
+```
+  private printStatement(): Stmt {
+    const value: Expr.Expr = this.expression()
+    this.consume(TokenType.Semicolon, "Expect ';' after value.")
+    return new Print(value)
+  }
+```
+
+```
+  private expressionStatement(): Stmt {
+    const expr = this.expression()
+    this.consume(TokenType.Semicolon, "Expect ';' after expression.")
+    return new Expression(expr)
+  }
+```
+
+## 115
+
+```
+import * as Stmt from './Stmt.js'
+// ...
+
+export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void>
+```
+
+```
+  visitExpressionStmt(stmt: Stmt.Expression): void {
+    this.evaluate(stmt.expression)
+    return undefined
+  }
+```
+
+```
+  visitPrintStmt(stmt: Stmt.Print): void {
+    const value = this.evaluate(stmt.expression)
+    console.log(this.stringify(value))
+    return undefined
+  }
+```
+
+```
+  interpret(statements: Stmt.Stmt[]) {
+    try {
+      for (const statement of statements) {
+        this.execute(statement)
+      }
+    }
+    catch (error) {
+      if (error instanceof RuntimeError) {
+        Jevlox.runtimeError(error)
+      }
+      else throw error
+    }
+  }
+```
+
+```
+  private execute(stmt: Stmt.Stmt) {
+    stmt.accept(this)
+  }
+```
+
+## 116
+
+```
+    const statements = parser.parse()
+```
+
+```
+    this.interpreter.interpret(statements)
+```
+
+```
+print['one]
+print[true]
+print[[2].+[1]]
+```
+
+```
+[beverage].let['espresso]
+```
+
+```
+/print[beverage]  espresso
+```

@@ -1,5 +1,5 @@
 import * as Expr from "./Expr.js"
-import { Jevlox } from "./jevlox.js"
+import { Jevlox } from "./Jevlox.js"
 import { Expression, Print, Stmt } from "./Stmt.js"
 import { Token } from "./Token.js"
 import { TokenType } from "./TokenType.js"

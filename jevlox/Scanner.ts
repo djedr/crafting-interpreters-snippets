@@ -1,6 +1,6 @@
 import { Literal, Token } from "./Token.js"
 import { TokenType } from "./TokenType.js"
-import { Jevlox } from "./jevlox.js"
+import { Jevlox } from "./Jevlox.js"
 
 export class Scanner {
   private static keywords = new Map([
