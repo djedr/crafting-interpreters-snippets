@@ -1,6 +1,6 @@
 import * as Expr from "./Expr.js"
 import { Jevlox } from "./Jevlox.js"
-import { Expression, Print, Stmt } from "./Stmt.js"
+import { Expression, Print, Stmt, Var } from "./Stmt.js"
 import { Token } from "./Token.js"
 import { TokenType } from "./TokenType.js"
 
@@ -17,13 +17,27 @@ export class Parser {
   parse(): Stmt[] {
     const statements: Stmt[] = []
     while (!this.isAtEnd()) {
-      statements.push(this.statement())
+      statements.push(this.declaration())
     }
     return statements
   }
 
   private expression(): Expr.Expr {
     return this.equality()
+  }
+
+  private declaration(): Stmt {
+    try {
+      if (this.match(TokenType.Var)) return this.varDeclaration()
+      return this.statement()
+    }
+    catch (error) {
+      if (error instanceof ParseError) {
+        this.synchronize()
+        return null
+      }
+      throw error
+    }
   }
 
   private statement(): Stmt {
@@ -36,6 +50,18 @@ export class Parser {
     const value: Expr.Expr = this.expression()
     this.consume(TokenType.Semicolon, "Expect ';' after value.")
     return new Print(value)
+  }
+
+  private varDeclaration(): Stmt {
+    const name = this.consume(TokenType.Identifier, "Expect variable name.")
+
+    let initializer: Expr.Expr = null
+    if (this.match(TokenType.Equal)) {
+      initializer = this.expression()
+    }
+
+    this.consume(TokenType.Semicolon, "Expect ';' after variable declaration.")
+    return new Var(name, initializer)
   }
 
   private expressionStatement(): Stmt {
@@ -108,6 +134,10 @@ export class Parser {
 
     if (this.match(TokenType.Number, TokenType.String)) {
       return new Expr.Literal(this.previous().literal)
+    }
+
+    if (this.match(TokenType.Identifier)) {
+      return new Expr.Variable(this.previous())
     }
 
     if (this.match(TokenType.LeftParen)) {

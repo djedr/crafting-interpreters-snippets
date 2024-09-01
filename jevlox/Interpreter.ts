@@ -4,11 +4,14 @@ import { Literal, Token } from './Token.js'
 import { TokenType } from './TokenType.js'
 import { RuntimeError } from './RuntimeError.js'
 import { Jevlox } from './Jevlox.js'
+import { Environment } from './Environment.js'
 
 // todo: change accordingly
-type Value = Literal
+export type Value = Literal
 
 export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
+  private environment: Environment = new Environment()
+
   interpret(statements: Stmt.Stmt[]) {
     try {
       for (const statement of statements) {
@@ -39,6 +42,15 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     const value = this.evaluate(stmt.expression)
     console.log(this.stringify(value))
     return undefined
+  }
+  visitVarStmt(stmt: Stmt.Var): void {
+    let value = null
+    if (stmt.initializer !== null) {
+      value = this.evaluate(stmt.initializer)
+    }
+
+    this.environment.define(stmt.name.lexeme, value)
+    return null
   }
 
   visitBinaryExpr(expr: Expr.Binary): Value {
@@ -108,6 +120,9 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
 
     // Unreachable.
     return null
+  }
+  visitVariableExpr(expr: Expr.Variable): Literal {
+    return this.environment.get(expr.name)
   }
 
   private checkNumberOperand(operator: Token, operand: Value): asserts operand is number {

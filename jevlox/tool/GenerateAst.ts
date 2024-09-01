@@ -12,12 +12,14 @@ export class GenerateAst {
       "Grouping : Expr expression",
       "Literal  : Lit value",
       "Unary    : Token operator, Expr right",
+      "Variable : Token name",
     ], `import { Token } from "./Token.js"
 import { Literal as Lit } from "./Token.js"`)
 
     this.defineAst(outputDir, "Stmt", [
       "Expression : Expr expression",
-      "Print      : Expr expression"
+      "Print      : Expr expression",
+      "Var        : Token name, Expr initializer",
     ], "import { Expr } from './Expr.js'")
   }
 

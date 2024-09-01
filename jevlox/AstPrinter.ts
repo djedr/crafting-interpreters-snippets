@@ -18,6 +18,9 @@ export class AstPrinter implements Expr.Visitor<string> {
   visitUnaryExpr(expr: Expr.Unary): string {
     return this.parenthesize(expr.operator.lexeme, expr.right)
   }
+  visitVariableExpr(expr: Expr.Variable): string {
+    return this.parenthesize("", expr)
+  }
 
   private parenthesize(name: string, ...exprs: Expr.Expr[]) {
     let output = ''
