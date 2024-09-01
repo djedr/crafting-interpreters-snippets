@@ -1880,3 +1880,43 @@ print[[2].+[1]]
 ```
 /print[beverage]  espresso
 ```
+
+## 117
+
+```
+if[monday]./[/print['Ugh, already?]]
+```
+
+```
+if[monday]./[[beverage].let['espresso]]
+```
+
+## 118
+
+```
+      "Var        : Token name, Expr initializer"
+```
+
+```
+      "Variable : Token name",
+```
+
+```
+      statements.push(this.declaration())
+```
+
+```
+  private declaration(): Stmt {
+    try {
+      if (this.match(TokenType.Var)) return this.varDeclaration()
+      return this.statement()
+    }
+    catch (error) {
+      if (error instanceof ParseError) {
+        this.synchronize()
+        return null
+      }
+      throw error
+    }
+  }
+```
