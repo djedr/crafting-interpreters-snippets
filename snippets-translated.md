@@ -1920,3 +1920,58 @@ if[monday]./[[beverage].let['espresso]]
     }
   }
 ```
+
+## 119
+
+```
+  private varDeclaration(): Stmt {
+    const name = this.consume(TokenType.Identifier, "Expect variable name.")
+
+    let initializer: Expr.Expr = null
+    if (this.match(TokenType.Equal)) {
+      initializer = this.expression()
+    }
+
+    this.consume(TokenType.Semicolon, "Expect ';' after variable declaration.")
+    return new Var(name, initializer)
+  }
+```
+
+```
+    if (this.match(TokenType.Identifier)) {
+      return new Expr.Variable(this.previous())
+    }
+```
+
+## 120
+
+```
+import { Value } from "./Interpreter.js";
+import { RuntimeError } from "./RuntimeError.js";
+import { Token } from "./Token.js";
+
+export class Environment {
+  private readonly values = new Map<string, Value>()
+}
+```
+
+```
+  define(name: string, value: Value): void {
+    this.values.set(name, value)
+  }
+```
+
+## 121
+
+```
+  get(name: Token): Value {
+    if (this.values.has(name.lexeme)) {
+      return this.values.get(name.lexeme)
+    }
+
+    throw new RuntimeError(
+      name,
+      `Undefined variable '${name.lexeme}'.`,
+    )
+  }
+```
