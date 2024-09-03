@@ -1961,6 +1961,13 @@ export class Environment {
   }
 ```
 
+```
+[a].let['before]
+/print[a]  "before".
+[a].let['after]
+print[a]  "after".
+```
+
 ## 121
 
 ```
@@ -1974,4 +1981,322 @@ export class Environment {
       `Undefined variable '${name.lexeme}'.`,
     )
   }
+```
+
+```
+[isOdd].function[[n]
+  if[[n].=[0]]./[return[false]]
+  return[isEven[[n].-[1]]]
+]
+
+[isEven].function[[n]
+  if[[n].=[0]]./[return[true]]
+  return[isOdd[[n].-[1]]]
+]
+```
+
+## 122
+
+```
+print[a]
+[a].let['too late!]
+```
+
+```
+  private environment: Environment = new Environment()
+```
+
+```
+  visitVarStmt(stmt: Stmt.Var): void {
+    let value = null
+    if (stmt.initializer !== null) {
+      value = this.evaluate(stmt.initializer)
+    }
+
+    this.environment.define(stmt.name.lexeme, value)
+    return null
+  }
+```
+
+## 123
+
+```
+[a].let[]
+/print[a]
+```
+
+```
+  visitVariableExpr(expr: Expr.Variable): Literal {
+    return this.environment.get(expr.name)
+  }
+```
+
+```
+[a].let[1]
+[b].let[2]
+/print[[a].+[b]]
+```
+
+## 124
+
+```
+[instance].[field]./set['value]
+```
+
+```
+      "Assign   : Token name, Expr value",
+```
+
+```
+    return assignment()
+```
+
+```
+[a].let['before]
+[a]./set['value]
+```
+
+```
+makeList[].[head].[next]./set[node]
+```
+
+## 125
+
+```
+  private assignment(): Expr.Expr {
+    const expr = this.equality()
+
+    if (this.match(TokenType.Equal)) {
+      const equals: Token = this.previous()
+      const value: Expr.Expr = this.assignment()
+
+      if (expr instanceof Expr.Variable) {
+        const name: Token = expr.name
+        return new Expr.Assign(name, value)
+      }
+
+      this.error(equals, "Invalid assignment target.")
+    }
+
+    return expr
+  }
+```
+
+```
+newPoint[ [x].+[2] [0] ].[y]./set[3]
+```
+
+```
+newPoint[ [x].+[2] [0] ].[y]
+```
+
+```
+[a].+[b]./set[c]
+```
+
+## 126
+
+```
+  visitAssignExpr(expr: Expr.Assign): Literal {
+    const value = this.evaluate(expr.value)
+    this.environment.assign(expr.name, value)
+    return value
+  }
+```
+
+```
+  assign(name: Token, value: Value): void {
+    if (this.values.has(name.lexeme)) {
+      this.values.set(name.lexeme, value)
+      return
+    }
+
+    throw new RuntimeError(
+      name,
+      `Undefined variable '${name.lexeme}'.`
+    )
+  }
+```
+
+```
+[a].let[1]
+/print[[a]./set[2]]  "2".
+```
+
+## 127
+
+```
+[
+  [a].let['first]
+  /print[a]  "first".
+]
+
+
+[
+  [a].let['second]
+  /print[a]  "second".
+]
+```
+
+```
+[Saxophone].class[
+  play[]  [
+    /print['Careless Whisper]
+  ]
+]
+
+[GolfClub].class[
+  play[]  [
+    /print['Fore!]
+  ]
+]
+
+[playIt].function[[thing]
+  [thing].[play]\[]
+]
+```
+
+## 128
+
+```
+[
+  [a].let['in block]
+]
+/print[a]  Error! No more "a".
+```
+
+```
+How loud?
+[volume].let[11]
+
+Silence.
+[volume]./set[0]
+
+Calculate size of 3x4x5 cuboid.
+[
+  [volume].let[[3].*[4].*[5]]
+  print[volume]
+]
+```
+
+## 129
+
+```
+[global].let['outside]
+[
+  [local].let['inside]
+  /print[[global].+[local]]
+]
+```
+
+```
+  readonly enclosing: Environment | null
+```
+
+```
+  constructor(enclosing: Environment | null = null) {
+    this.enclosing = enclosing
+  }
+```
+
+```
+    if (this.enclosing !== null) return this.enclosing.get(name)
+```
+
+```
+    if (this.enclosing !== null) {
+      this.enclosing.assign(name, value)
+      return
+    }
+```
+
+```
+      "Block      : Stmt[] statements",
+```
+
+## 131
+
+```
+    if (this.match(TokenType.LeftBrace)) return new Block(this.block())
+```
+
+```
+  private block(): Stmt[] {
+    const statements: Stmt[] = []
+
+    while (!this.check(TokenType.RightBrace) && !this.isAtEnd()) {
+      statements.push(this.declaration())
+    }
+
+    this.consume(TokenType.RightBrace, "Expect '}' after block.")
+    return statements
+  }
+```
+
+```
+  visitBlockStmt(stmt: Stmt.Block): void {
+    this.executeBlock(stmt.statements, new Environment(this.environment))
+    return null
+  }
+```
+
+```
+  executeBlock(statements: Stmt.Stmt[], environment: Environment): void {
+    const previous = this.environment
+    try {
+      this.environment = environment
+
+      for (const statement of statements) {
+        this.execute(statement)
+      }
+    }
+    finally {
+      this.environment = previous
+    }
+  }
+```
+
+## 132
+
+```
+[a].let['global a]
+[b].let['global b]
+[c].let['global c]
+[
+  [a].let['outer a]
+  [b].let['outer b]
+  [
+    [a].let['inner a]
+    /print[a]
+    /print[b]
+    /print[c]
+  ]
+  /print[a]
+  /print[b]
+  /print[c]
+]
+/print[a]
+/print[b]
+/print[c]
+```
+
+## 133
+
+```
+No initializers.
+[a].let[]
+[b].let[]
+
+[a]./set['assigned]
+/print[a]  OK, was assigned first
+
+/print[b]  Error!
+```
+
+```
+[a].let[1]
+[
+  [a].let[[a].+[2]]
+  /print[a]
+]
 ```
