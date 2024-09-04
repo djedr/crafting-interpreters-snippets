@@ -2332,6 +2332,16 @@ No initializers.
 ## 141
 
 ```
+[false].&&[sideEffect[]]
+```
+
+or
+
+```
+[false]./and[sideEffect[]]
+```
+
+```
   visitIfStmt(stmt: Stmt.If): void {
     if (this.isTruthy(this.evaluate(stmt.condition))) {
       this.execute(stmt.thenBranch)
