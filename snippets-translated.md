@@ -2300,3 +2300,45 @@ No initializers.
   /print[a]
 ]
 ```
+
+## 139
+
+```
+      "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
+```
+
+```
+    if (this.match(TokenType.If)) return this.ifStatement()
+```
+
+## 140
+
+```
+  private ifStatement() {
+    this.consume(TokenType.LeftParen, "Expect '(' after 'if'.")
+    const condition: Expr.Expr = this.expression()
+    this.consume(TokenType.RightParen, "Expect ')' after if condition.")
+
+    const thenBranch: Stmt = this.statement()
+    let elseBranch = null
+    if (this.match(TokenType.Else)) {
+      elseBranch = this.statement()
+    }
+
+    return new If(condition, thenBranch, elseBranch)
+  }
+```
+
+## 141
+
+```
+  visitIfStmt(stmt: Stmt.If): void {
+    if (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.thenBranch)
+    }
+    else if (stmt.elseBranch !== null) {
+      this.execute(stmt.elseBranch)
+    }
+    return null
+  }
+```
