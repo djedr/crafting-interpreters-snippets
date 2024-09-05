@@ -2332,16 +2332,6 @@ No initializers.
 ## 141
 
 ```
-[false].&&[sideEffect[]]
-```
-
-or
-
-```
-[false]./and[sideEffect[]]
-```
-
-```
   visitIfStmt(stmt: Stmt.If): void {
     if (this.isTruthy(this.evaluate(stmt.condition))) {
       this.execute(stmt.thenBranch)
@@ -2351,4 +2341,203 @@ or
     }
     return null
   }
+```
+
+```
+[false].&&[sideEffect[]]
+```
+
+or
+
+```
+[false]./and[sideEffect[]]
+```
+
+## 142
+
+```
+      "Logical  : Expr left, Token operator, Expr right",
+```
+
+```
+    const expr = this.or()
+```
+
+```
+  private or(): Expr.Expr {
+    let expr = this.and()
+
+    while (this.match(TokenType.Or)) {
+      const operator: Token = this.previous()
+      const right: Expr.Expr = this.and()
+      expr = new Expr.Logical(expr, operator, right)
+    }
+
+    return expr
+  }
+```
+
+```
+  private and(): Expr.Expr {
+    let expr: Expr.Expr = this.equality()
+
+    while (this.match(TokenType.And)) {
+      const operator: Token = this.previous()
+      const right = this.equality()
+      expr = new Expr.Logical(expr, operator, right)
+    }
+
+    return expr
+  }
+```
+
+## 143
+
+```
+  visitLogicalExpr(expr: Expr.Logical): Literal {
+    const left = this.evaluate(expr.left)
+
+    if (expr.operator.type === TokenType.Or) {
+      if (this.isTruthy(left)) return left
+    }
+    else {
+      if (!this.isTruthy(left)) return left
+    }
+
+    return this.evaluate(expr.right)
+  }
+```
+
+```
+/print[['hi]./or[2]]  "hi".
+/print[[null]./or['yes]]  "yes".
+```
+
+## 144
+
+```
+      "While      : Expr condition, Stmt body",
+```
+
+```
+    if (this.match(TokenType.While)) return this.whileStatement()
+```
+
+```
+  private whileStatement(): Stmt {
+    this.consume(TokenType.LeftParen, "Expect '(' after 'while'.")
+    const condition = this.expression()
+    this.consume(TokenType.RightParen, "Expect ')' after while condition.")
+    const body: Stmt = this.statement()
+    return new While(condition, body)
+  }
+```
+
+```
+  visitWhileStmt(stmt: Stmt.While): void {
+    while (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.body)
+    }
+    return null
+  }
+```
+
+```
+[i].let[0].for[[i].<[10]]./incr[[i]./set[[i].+[1]]]./[/print[i]]
+```
+
+## 145
+
+```
+[
+  [i].let[0]
+  [i].<[10].while[
+    /print[i]
+    [i]./set[[i].+[1]]
+  ]
+]
+```
+
+## 146
+
+```
+    if (this.match(TokenType.For)) return this.forStatement()
+```
+
+```
+  private forStatement() {
+    this.consume(TokenType.LeftParen, "Expect '(' after 'for'.")
+
+    // More here...
+  }
+```
+
+```
+    let initializer: Stmt
+    if (this.match(TokenType.Semicolon)) {
+      initializer = null
+    }
+    else if (this.match(TokenType.Var)) {
+      initializer = this.varDeclaration()
+    }
+    else {
+      initializer = this.expressionStatement()
+    }
+```
+
+## 147
+
+```
+    let condition = null
+    if (!this.check(TokenType.Semicolon)) {
+      condition = this.expression()
+    }
+    this.consume(TokenType.Semicolon, "Expect ';' after loop condition.")
+```
+
+```
+    let increment: Expr.Expr = null
+    if (!this.check(TokenType.RightParen)) {
+      increment = this.expression()
+    }
+    this.consume(TokenType.RightParen, "Expect ')' after for clauses.")
+```
+
+```
+    let body = this.statement()
+
+    return body
+```
+
+```
+    if (increment !== null) {
+      body = new Block([
+        body,
+        new Expression(increment)
+      ])
+    }
+```
+
+## 148
+
+```
+    if (condition === null) condition = new Expr.Literal(true)
+    body = new While(condition, body)
+```
+
+```
+    if (initializer !== null) {
+      body = new Block([initializer, body])
+    }
+```
+
+```
+[a].let[0]
+[temp].let[]
+
+[b].let[1].for[[a].<[10000]]./incr[[b]./set[[temp].+[b]]]./[
+  /print[a]
+  [temp]./set[a]
+  [a]./set[b]
+]
 ```
