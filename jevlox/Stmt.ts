@@ -8,6 +8,9 @@ export interface Visitor<R> {
   visitExpressionStmt(stmt: Expression): R
   visitPrintStmt(stmt: Print): R
   visitVarStmt(stmt: Var): R
+  visitBlockStmt(stmt: Block): R
+  visitIfStmt(stmt: If): R
+  visitWhileStmt(stmt: While): R
 }
 export class Expression extends Stmt {
   constructor(expression: Expr) {
@@ -40,4 +43,40 @@ export class Var extends Stmt {
   }
   readonly name: Token
   readonly initializer: Expr
+}
+export class Block extends Stmt {
+  constructor(statements: Stmt[]) {
+    super()
+    this.statements = statements
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitBlockStmt(this)
+  }
+  readonly statements: Stmt[]
+}
+export class If extends Stmt {
+  constructor(condition: Expr, thenBranch: Stmt, elseBranch: Stmt) {
+    super()
+    this.condition = condition
+    this.thenBranch = thenBranch
+    this.elseBranch = elseBranch
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitIfStmt(this)
+  }
+  readonly condition: Expr
+  readonly thenBranch: Stmt
+  readonly elseBranch: Stmt
+}
+export class While extends Stmt {
+  constructor(condition: Expr, body: Stmt) {
+    super()
+    this.condition = condition
+    this.body = body
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitWhileStmt(this)
+  }
+  readonly condition: Expr
+  readonly body: Stmt
 }

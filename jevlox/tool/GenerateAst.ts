@@ -13,6 +13,8 @@ export class GenerateAst {
       "Literal  : Lit value",
       "Unary    : Token operator, Expr right",
       "Variable : Token name",
+      "Assign   : Token name, Expr value",
+      "Logical  : Expr left, Token operator, Expr right",
     ], `import { Token } from "./Token.js"
 import { Literal as Lit } from "./Token.js"`)
 
@@ -20,7 +22,11 @@ import { Literal as Lit } from "./Token.js"`)
       "Expression : Expr expression",
       "Print      : Expr expression",
       "Var        : Token name, Expr initializer",
-    ], "import { Expr } from './Expr.js'")
+      "Block      : Stmt[] statements",
+      "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
+      "While      : Expr condition, Stmt body",
+    ], `import { Expr } from './Expr.js'
+import { Token } from './Token.js'`)
   }
 
   private static defineAst(

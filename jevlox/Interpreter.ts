@@ -34,9 +34,36 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     stmt.accept(this)
   }
 
+  executeBlock(statements: Stmt.Stmt[], environment: Environment): void {
+    const previous = this.environment
+    try {
+      this.environment = environment
+
+      for (const statement of statements) {
+        this.execute(statement)
+      }
+    }
+    finally {
+      this.environment = previous
+    }
+  }
+
+  visitBlockStmt(stmt: Stmt.Block): void {
+    this.executeBlock(stmt.statements, new Environment(this.environment))
+    return null
+  }
   visitExpressionStmt(stmt: Stmt.Expression): void {
     this.evaluate(stmt.expression)
     return undefined
+  }
+  visitIfStmt(stmt: Stmt.If): void {
+    if (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.thenBranch)
+    }
+    else if (stmt.elseBranch !== null) {
+      this.execute(stmt.elseBranch)
+    }
+    return null
   }
   visitPrintStmt(stmt: Stmt.Print): void {
     const value = this.evaluate(stmt.expression)
@@ -52,7 +79,30 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     this.environment.define(stmt.name.lexeme, value)
     return null
   }
+  visitWhileStmt(stmt: Stmt.While): void {
+    while (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.body)
+    }
+    return null
+  }
 
+  visitAssignExpr(expr: Expr.Assign): Literal {
+    const value = this.evaluate(expr.value)
+    this.environment.assign(expr.name, value)
+    return value
+  }
+  visitLogicalExpr(expr: Expr.Logical): Literal {
+    const left = this.evaluate(expr.left)
+
+    if (expr.operator.type === TokenType.Or) {
+      if (this.isTruthy(left)) return left
+    }
+    else {
+      if (!this.isTruthy(left)) return left
+    }
+
+    return this.evaluate(expr.right)
+  }
   visitBinaryExpr(expr: Expr.Binary): Value {
     const left = this.evaluate(expr.left)
     const right = this.evaluate(expr.right)
