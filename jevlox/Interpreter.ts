@@ -5,12 +5,30 @@ import { TokenType } from './TokenType.js'
 import { RuntimeError } from './RuntimeError.js'
 import { Jevlox } from './Jevlox.js'
 import { Environment } from './Environment.js'
+import { Callable } from './Callable.js'
+import { Fun } from './Fun.js'
+import { Return } from './Return.js'
 
 // todo: change accordingly
-export type Value = Literal
+export type Value = Literal | Callable
 
 export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
-  private environment: Environment = new Environment()
+  readonly globals: Environment = new Environment()
+  private environment: Environment = this.globals
+
+  constructor() {
+    this.globals.define("clock", <Callable>{
+      arity() { return 0 },
+      
+      call(interpreter, args) {
+        return Date.now() / 1000
+      },
+
+      toString() {
+        return "<native fn>"
+      }
+    })
+  }
 
   interpret(statements: Stmt.Stmt[]) {
     try {
@@ -56,6 +74,11 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     this.evaluate(stmt.expression)
     return undefined
   }
+  visitFunStmt(stmt: Stmt.Fun): void {
+    const fun = new Fun(stmt, this.environment)
+    this.environment.define(stmt.name.lexeme, fun)
+    return null
+  }
   visitIfStmt(stmt: Stmt.If): void {
     if (this.isTruthy(this.evaluate(stmt.condition))) {
       this.execute(stmt.thenBranch)
@@ -69,6 +92,12 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     const value = this.evaluate(stmt.expression)
     console.log(this.stringify(value))
     return undefined
+  }
+  visitReturnStmt(stmt: Stmt.Return): void {
+    let value: Value = null
+    if (stmt.value !== null) value = this.evaluate(stmt.value)
+    
+    throw new Return(value)
   }
   visitVarStmt(stmt: Stmt.Var): void {
     let value = null
@@ -86,12 +115,12 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     return null
   }
 
-  visitAssignExpr(expr: Expr.Assign): Literal {
+  visitAssignExpr(expr: Expr.Assign): Value {
     const value = this.evaluate(expr.value)
     this.environment.assign(expr.name, value)
     return value
   }
-  visitLogicalExpr(expr: Expr.Logical): Literal {
+  visitLogicalExpr(expr: Expr.Logical): Value {
     const left = this.evaluate(expr.left)
 
     if (expr.operator.type === TokenType.Or) {
@@ -151,6 +180,31 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     // Unreachable.
     return null
   }
+  visitCallExpr(expr: Expr.Call): Value {
+    const callee: Value = this.evaluate(expr.callee)
+
+    const args: Value[] = []
+    for (const argument of expr.args) {
+      args.push(this.evaluate(argument))
+    }
+
+    if (!(typeof callee === 'object' && 'call' in callee)) {
+      throw new RuntimeError(
+        expr.paren,
+        "Can only call functions and classes.",
+      )
+    }
+
+    const fun: Callable = callee
+    if (args.length != fun.arity()) {
+      throw new RuntimeError(
+        expr.paren,
+        `Expected ${fun.arity()} arguments but got ${args.length}.`
+      )
+    }
+
+    return fun.call(this, args)
+  }
   visitGroupingExpr(expr: Expr.Grouping): Value {
     return this.evaluate(expr.expression)
   }
@@ -171,7 +225,7 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     // Unreachable.
     return null
   }
-  visitVariableExpr(expr: Expr.Variable): Literal {
+  visitVariableExpr(expr: Expr.Variable): Value {
     return this.environment.get(expr.name)
   }
 

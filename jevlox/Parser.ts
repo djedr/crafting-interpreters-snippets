@@ -1,6 +1,6 @@
 import * as Expr from "./Expr.js"
 import { Jevlox } from "./Jevlox.js"
-import { Block, Expression, If, Print, Stmt, Var, While } from "./Stmt.js"
+import { Block, Expression, Fun, If, Print, Return, Stmt, Var, While } from "./Stmt.js"
 import { Token } from "./Token.js"
 import { TokenType } from "./TokenType.js"
 
@@ -28,6 +28,7 @@ export class Parser {
 
   private declaration(): Stmt {
     try {
+      if (this.match(TokenType.Fun)) return this.fun("function")
       if (this.match(TokenType.Var)) return this.varDeclaration()
       return this.statement()
     }
@@ -44,6 +45,7 @@ export class Parser {
     if (this.match(TokenType.For)) return this.forStatement()
     if (this.match(TokenType.If)) return this.ifStatement()
     if (this.match(TokenType.Print)) return this.printStatement()
+    if (this.match(TokenType.Return)) return this.returnStatement()
     if (this.match(TokenType.While)) return this.whileStatement()
     if (this.match(TokenType.LeftBrace)) return new Block(this.block())
 
@@ -114,6 +116,17 @@ export class Parser {
     return new Print(value)
   }
 
+  private returnStatement(): Stmt {
+    const keyword: Token = this.previous()
+    let value: Expr.Expr = null
+    if (!this.check(TokenType.Semicolon)) {
+      value = this.expression()
+    }
+    
+    this.consume(TokenType.Semicolon, "Expect ';' after return value.")
+    return new Return(keyword, value)
+  }
+
   private varDeclaration(): Stmt {
     const name = this.consume(TokenType.Identifier, "Expect variable name.")
 
@@ -138,6 +151,30 @@ export class Parser {
     const expr = this.expression()
     this.consume(TokenType.Semicolon, "Expect ';' after expression.")
     return new Expression(expr)
+  }
+
+  private fun(kind: string): Fun {
+    const name: Token = this.consume(
+      TokenType.Identifier,
+      `Expect ${kind} name.`
+    )
+    this.consume(TokenType.LeftParen, `Expect '(' after ${kind} name.`)
+    const parameters: Token[] = []
+    if (!this.check(TokenType.RightParen)) {
+      do {
+        if (parameters.length >= 255) {
+          this.error(this.peek(), "Can't have more than 255 parameters.")
+        }
+        parameters.push(this.consume(
+          TokenType.Identifier,
+          "Expect parameter name.",
+        ))
+      } while (this.match(TokenType.Comma))
+    }
+    this.consume(TokenType.RightParen, "Expect ')' after parameters.")
+    this.consume(TokenType.LeftBrace, `Expect '{' before ${kind} body.`)
+    const body: Stmt[] = this.block()
+    return new Fun(name, parameters, body)
   }
 
   private block(): Stmt[] {
@@ -247,7 +284,42 @@ export class Parser {
       return new Expr.Unary(operator, right)
     }
 
-    return this.primary()
+    return this.call()
+  }
+
+  private finishCall(callee: Expr.Expr): Expr.Expr {
+    const args: Expr.Expr[] = []
+    if (!this.check(TokenType.RightParen)) {
+      do {
+        if (args.length >= 255) {
+          this.error(this.peek(), "Can't have more than 255 arguments.")
+        }
+        args.push(this.expression())
+      }
+      while (this.match(TokenType.Comma))
+    }
+
+    const paren = this.consume(
+      TokenType.RightParen,
+      "Expect ')' after arguments.",
+    )
+
+    return new Expr.Call(callee, paren, args)
+  }
+
+  private call(): Expr.Expr {
+    let expr = this.primary()
+
+    while (true) {
+      if (this.match(TokenType.LeftParen)) {
+        expr = this.finishCall(expr)
+      }
+      else {
+        break
+      }
+    }
+
+    return expr
   }
 
   private primary(): Expr.Expr {

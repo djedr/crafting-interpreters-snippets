@@ -12,6 +12,7 @@ export interface Visitor<R> {
   visitVariableExpr(expr: Variable): R
   visitAssignExpr(expr: Assign): R
   visitLogicalExpr(expr: Logical): R
+  visitCallExpr(expr: Call): R
 }
 export class Binary extends Expr {
   constructor(left: Expr, operator: Token, right: Expr) {
@@ -94,4 +95,18 @@ export class Logical extends Expr {
   readonly left: Expr
   readonly operator: Token
   readonly right: Expr
+}
+export class Call extends Expr {
+  constructor(callee: Expr, paren: Token, args: Expr[]) {
+    super()
+    this.callee = callee
+    this.paren = paren
+    this.args = args
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitCallExpr(this)
+  }
+  readonly callee: Expr
+  readonly paren: Token
+  readonly args: Expr[]
 }

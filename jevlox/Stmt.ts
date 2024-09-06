@@ -11,6 +11,8 @@ export interface Visitor<R> {
   visitBlockStmt(stmt: Block): R
   visitIfStmt(stmt: If): R
   visitWhileStmt(stmt: While): R
+  visitFunStmt(stmt: Fun): R
+  visitReturnStmt(stmt: Return): R
 }
 export class Expression extends Stmt {
   constructor(expression: Expr) {
@@ -79,4 +81,30 @@ export class While extends Stmt {
   }
   readonly condition: Expr
   readonly body: Stmt
+}
+export class Fun extends Stmt {
+  constructor(name: Token, params: Token[], body: Stmt[]) {
+    super()
+    this.name = name
+    this.params = params
+    this.body = body
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitFunStmt(this)
+  }
+  readonly name: Token
+  readonly params: Token[]
+  readonly body: Stmt[]
+}
+export class Return extends Stmt {
+  constructor(keyword: Token, value: Expr) {
+    super()
+    this.keyword = keyword
+    this.value = value
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitReturnStmt(this)
+  }
+  readonly keyword: Token
+  readonly value: Expr
 }
