@@ -2541,3 +2541,130 @@ or
   [a]./set[b]
 ]
 ```
+
+## 152
+
+```
+average[[1][2]]
+```
+
+```
+getCallback[]\[]
+```
+
+```
+      "Call     : Expr callee, Token paren, Expr[] args",
+```
+
+```
+    return this.call()
+```
+
+## 153
+
+```
+  private call(): Expr.Expr {
+    let expr = this.primary()
+
+    while (true) {
+      if (this.match(TokenType.LeftParen)) {
+        expr = this.finishCall(expr)
+      }
+      else {
+        break
+      }
+    }
+
+    return expr
+  }
+```
+
+```
+  private finishCall(callee: Expr.Expr): Expr.Expr {
+    const args: Expr.Expr[] = []
+    if (!this.check(TokenType.RightParen)) {
+      do {
+        args.push(this.expression())
+      }
+      while (this.match(TokenType.Comma))
+    }
+
+    const paren = this.consume(
+      TokenType.RightParen,
+      "Expect ')' after arguments.",
+    )
+
+    return new Expr.Call(callee, paren, args)
+  }
+```
+
+## 154
+
+```
+        if (args.length >= 255) {
+          this.error(this.peek(), "Can't have more than 255 arguments.")
+        }
+```
+
+```
+  visitCallExpr(expr: Expr.Call): Value {
+    const callee: Value = this.evaluate(expr.callee)
+
+    const args: Value[] = []
+    for (const argument of expr.args) {
+      args.push(this.evaluate(argument))
+    }
+
+    const fun: Callable = callee
+    return fun.call(this, args)
+  }
+```
+
+## 155
+
+```
+import { Interpreter, Value } from "./Interpreter.js";
+
+export interface Callable {
+  call(interpreter: Interpreter, args: Value[]): Value
+}
+```
+
+```
+['totally not a function]\[]
+```
+
+```
+    if (!(typeof callee === 'object' && 'call' in callee)) {
+      throw new RuntimeError(
+        expr.paren,
+        "Can only call functions and classes.",
+      )
+    }
+```
+
+## 156
+
+```
+[add].function[[a][b][c]]./[
+  /print[[a].+[b].+[c]]
+]
+```
+
+```
+add[[1][2][3][4]]  Too many.
+add[[1][2]]        Too few.
+```
+
+```
+    if (args.length != fun.arity()) {
+      throw new RuntimeError(
+        expr.paren,
+        `Expected ${fun.arity()} arguments but got ${args.length}.`
+      )
+    }
+```
+
+```
+  arity(): number
+```
