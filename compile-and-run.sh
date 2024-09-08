@@ -1,3 +1,2 @@
-cd jevlox
-tsc
-node out/index.js
+tsc --project jevlox/
+node jevlox/out/index.js $@
