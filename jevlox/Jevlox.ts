@@ -7,6 +7,7 @@ import { TokenType } from './TokenType.js';
 import { Parser } from './Parser.js';
 import { RuntimeError } from './RuntimeError.js';
 import { Interpreter } from './Interpreter.js';
+import { Resolver } from './Resolver.js';
 
 // workaround for a bug in readline: https://github.com/nodejs/node/issues/53497
 const readLine = (() => {
@@ -67,6 +68,12 @@ export class Jevlox {
     const statements = parser.parse()
 
     // Stop if there was a syntax error.
+    if (this.hadError) return
+
+    const resolver: Resolver = new Resolver(this.interpreter)
+    resolver.resolve(statements)
+
+    // Stop if there was a resolution error.
     if (this.hadError) return
 
     this.interpreter.interpret(statements)

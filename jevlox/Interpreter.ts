@@ -15,6 +15,7 @@ export type Value = Literal | Callable
 export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
   readonly globals: Environment = new Environment()
   private environment: Environment = this.globals
+  private readonly locals: Map<Expr.Expr, number> = new Map()
 
   constructor() {
     this.globals.define("clock", <Callable>{
@@ -50,6 +51,10 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
 
   private execute(stmt: Stmt.Stmt) {
     stmt.accept(this)
+  }
+
+  resolve(expr: Expr.Expr, depth: number) {
+    this.locals.set(expr, depth)
   }
 
   executeBlock(statements: Stmt.Stmt[], environment: Environment): void {
@@ -117,7 +122,15 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
 
   visitAssignExpr(expr: Expr.Assign): Value {
     const value = this.evaluate(expr.value)
-    this.environment.assign(expr.name, value)
+
+    const distance = this.locals.get(expr)
+    if (distance !== null) {
+      this.environment.assignAt(distance, expr.name, value)
+    }
+    else {
+      this.globals.assign(expr.name, value)
+    }
+
     return value
   }
   visitLogicalExpr(expr: Expr.Logical): Value {
@@ -226,7 +239,17 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     return null
   }
   visitVariableExpr(expr: Expr.Variable): Value {
-    return this.environment.get(expr.name)
+    return this.lookUpVariable(expr.name, expr)
+  }
+
+  private lookUpVariable(name: Token, expr: Expr.Expr): Value {
+    const distance: number = this.locals.get(expr)
+    if (distance !== undefined) {
+      return this.environment.getAt(distance, name.lexeme)
+    }
+    else {
+      return this.globals.get(name)
+    }
   }
 
   private checkNumberOperand(operator: Token, operand: Value): asserts operand is number {
