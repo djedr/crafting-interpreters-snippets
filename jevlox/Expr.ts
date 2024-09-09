@@ -13,6 +13,9 @@ export interface Visitor<R> {
   visitAssignExpr(expr: Assign): R
   visitLogicalExpr(expr: Logical): R
   visitCallExpr(expr: Call): R
+  visitGetExpr(expr: Get): R
+  visitSetExpr(expr: Set): R
+  visitThisExpr(expr: This): R
 }
 export class Binary extends Expr {
   constructor(left: Expr, operator: Token, right: Expr) {
@@ -109,4 +112,40 @@ export class Call extends Expr {
   readonly callee: Expr
   readonly paren: Token
   readonly args: Expr[]
+}
+export class Get extends Expr {
+  constructor(object: Expr, name: Token) {
+    super()
+    this.object = object
+    this.name = name
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitGetExpr(this)
+  }
+  readonly object: Expr
+  readonly name: Token
+}
+export class Set extends Expr {
+  constructor(object: Expr, name: Token, value: Expr) {
+    super()
+    this.object = object
+    this.name = name
+    this.value = value
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitSetExpr(this)
+  }
+  readonly object: Expr
+  readonly name: Token
+  readonly value: Expr
+}
+export class This extends Expr {
+  constructor(keyword: Token) {
+    super()
+    this.keyword = keyword
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitThisExpr(this)
+  }
+  readonly keyword: Token
 }

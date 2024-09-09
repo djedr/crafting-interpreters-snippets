@@ -13,6 +13,7 @@ export interface Visitor<R> {
   visitWhileStmt(stmt: While): R
   visitFunStmt(stmt: Fun): R
   visitReturnStmt(stmt: Return): R
+  visitClassStmt(stmt: Class): R
 }
 export class Expression extends Stmt {
   constructor(expression: Expr) {
@@ -107,4 +108,16 @@ export class Return extends Stmt {
   }
   readonly keyword: Token
   readonly value: Expr
+}
+export class Class extends Stmt {
+  constructor(name: Token, methods: Fun[]) {
+    super()
+    this.name = name
+    this.methods = methods
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitClassStmt(this)
+  }
+  readonly name: Token
+  readonly methods: Fun[]
 }

@@ -16,6 +16,9 @@ export class GenerateAst {
       "Assign   : Token name, Expr value",
       "Logical  : Expr left, Token operator, Expr right",
       "Call     : Expr callee, Token paren, Expr[] args",
+      "Get      : Expr object, Token name",
+      "Set      : Expr object, Token name, Expr value",
+      "This     : Token keyword",
     ], `import { Token } from "./Token.js"
 import { Literal as Lit } from "./Token.js"`)
 
@@ -28,6 +31,7 @@ import { Literal as Lit } from "./Token.js"`)
       "While      : Expr condition, Stmt body",
       "Fun        : Token name, Token[] params, Stmt[] body",
       "Return     : Token keyword, Expr value",
+      "Class      : Token name, Fun[] methods",
     ], `import { Expr } from './Expr.js'
 import { Token } from './Token.js'`)
   }

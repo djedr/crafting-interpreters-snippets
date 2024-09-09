@@ -1,6 +1,6 @@
 import * as Expr from "./Expr.js"
 import { Jevlox } from "./Jevlox.js"
-import { Block, Expression, Fun, If, Print, Return, Stmt, Var, While } from "./Stmt.js"
+import { Block, Class, Expression, Fun, If, Print, Return, Stmt, Var, While } from "./Stmt.js"
 import { Token } from "./Token.js"
 import { TokenType } from "./TokenType.js"
 
@@ -28,6 +28,7 @@ export class Parser {
 
   private declaration(): Stmt {
     try {
+      if (this.match(TokenType.Class)) return this.classDeclaration()
       if (this.match(TokenType.Fun)) return this.fun("function")
       if (this.match(TokenType.Var)) return this.varDeclaration()
       return this.statement()
@@ -39,6 +40,20 @@ export class Parser {
       }
       throw error
     }
+  }
+
+  private classDeclaration(): Stmt {
+    const name: Token = this.consume(TokenType.Identifier, "Expect class name.")
+    this.consume(TokenType.LeftBrace, "Expect '{' before class body.")
+
+    const methods: Fun[] = []
+    while (!this.check(TokenType.RightBrace) && !this.isAtEnd()) {
+      methods.push(this.fun("method"))
+    }
+
+    this.consume(TokenType.RightBrace, "Expect '}' after class body.")
+
+    return new Class(name, methods)
   }
 
   private statement(): Stmt {
@@ -199,6 +214,9 @@ export class Parser {
         const name: Token = expr.name
         return new Expr.Assign(name, value)
       }
+      else if (expr instanceof Expr.Get) {
+        return new Expr.Set(expr.object, expr.name, value)
+      }
 
       this.error(equals, "Invalid assignment target.")
     }
@@ -314,6 +332,10 @@ export class Parser {
       if (this.match(TokenType.LeftParen)) {
         expr = this.finishCall(expr)
       }
+      else if (this.match(TokenType.Dot)) {
+        const name = this.consume(TokenType.Identifier, "Expect property name after '.'.")
+        expr = new Expr.Get(expr, name)
+      }
       else {
         break
       }
@@ -330,6 +352,8 @@ export class Parser {
     if (this.match(TokenType.Number, TokenType.String)) {
       return new Expr.Literal(this.previous().literal)
     }
+
+    if (this.match(TokenType.This)) return new Expr.This(this.previous())
 
     if (this.match(TokenType.Identifier)) {
       return new Expr.Variable(this.previous())

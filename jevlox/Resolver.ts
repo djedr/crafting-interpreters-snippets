@@ -7,12 +7,20 @@ import { Token } from "./Token.js";
 enum FunType {
   None,
   Fun,
+  Initializer,
+  Method,
+}
+
+enum ClassType {
+  None,
+  Class,
 }
 
 export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
   private readonly interpreter: Interpreter
   private readonly scopes: Map<string, boolean>[] = []
   private currentFun: FunType = FunType.None
+  private currentClass: ClassType = ClassType.None
 
   constructor(interpreter: Interpreter) {
     this.interpreter = interpreter
@@ -28,6 +36,32 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
     this.beginScope()
     this.resolve(stmt.statements)
     this.endScope()
+    return null
+  }
+
+  visitClassStmt(stmt: Stmt.Class): void {
+    const enclosingClass = this.currentClass
+    this.currentClass = ClassType.Class
+
+    this.declare(stmt.name)
+    this.define(stmt.name)
+
+    this.beginScope()
+    this.scopes.at(-1).set("this", true)
+
+    for (const method of stmt.methods) {
+      let declaration = FunType.Method
+      if (method.name.lexeme === "init") {
+        declaration = FunType.Initializer
+      }
+
+      this.resolveFun(method, declaration)
+    }
+
+    this.endScope()
+
+    this.currentClass = enclosingClass
+
     return null
   }
 
@@ -65,6 +99,10 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
     }
 
     if (stmt.value !== null) {
+      if (this.currentFun === FunType.Initializer) {
+        Jevlox.errorToken(stmt.keyword, "Can't return a value from an initializer.")
+      }
+      
       this.resolveExpression(stmt.value)
     }
 
@@ -108,6 +146,11 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
     return null
   }
 
+  visitGetExpr(expr: Expr.Get): void {
+    this.resolveExpression(expr.object)
+    return null
+  }
+
   visitGroupingExpr(expr: Expr.Grouping): void {
     this.resolveExpression(expr.expression)
     return null
@@ -120,6 +163,22 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
   visitLogicalExpr(expr: Expr.Logical): void {
     this.resolveExpression(expr.left)
     this.resolveExpression(expr.right)
+    return null
+  }
+
+  visitSetExpr(expr: Expr.Set): void {
+    this.resolveExpression(expr.value)
+    this.resolveExpression(expr.object)
+    return null
+  }
+
+  visitThisExpr(expr: Expr.This): void {
+    if (this.currentClass === ClassType.None) {
+      Jevlox.errorToken(expr.keyword, "Can't use 'this' outside of a class.")
+      return null
+    }
+
+    this.resolveLocal(expr, expr.keyword)
     return null
   }
 

@@ -8,9 +8,11 @@ import { Environment } from './Environment.js'
 import { Callable } from './Callable.js'
 import { Fun } from './Fun.js'
 import { Return } from './Return.js'
+import { Class } from './Class.js'
+import { Instance } from './Instance.js'
 
 // todo: change accordingly
-export type Value = Literal | Callable
+export type Value = Literal | Callable | Instance
 
 export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
   readonly globals: Environment = new Environment()
@@ -75,12 +77,25 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     this.executeBlock(stmt.statements, new Environment(this.environment))
     return null
   }
+  visitClassStmt(stmt: Stmt.Class): void {
+    this.environment.define(stmt.name.lexeme, null)
+
+    const methods: Map<string, Fun> = new Map()
+    for (const method of stmt.methods) {
+      const fun = new Fun(method, this.environment, method.name.lexeme === "init")
+      methods.set(method.name.lexeme, fun)
+    }
+
+    const klass: Class = new Class(stmt.name.lexeme, methods)
+    this.environment.assign(stmt.name, klass)
+    return null
+  }
   visitExpressionStmt(stmt: Stmt.Expression): void {
     this.evaluate(stmt.expression)
     return undefined
   }
   visitFunStmt(stmt: Stmt.Fun): void {
-    const fun = new Fun(stmt, this.environment)
+    const fun = new Fun(stmt, this.environment, false)
     this.environment.define(stmt.name.lexeme, fun)
     return null
   }
@@ -144,6 +159,23 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     }
 
     return this.evaluate(expr.right)
+  }
+  visitSetExpr(expr: Expr.Set): Value {
+    const object = this.evaluate(expr.object)
+
+    if (!(object instanceof Instance)) {
+      throw new RuntimeError(
+        expr.name,
+        "Only instances have fields.",
+      )
+    }
+
+    const value = this.evaluate(expr.value)
+    object.set(expr.name, value)
+    return value
+  }
+  visitThisExpr(expr: Expr.This): Value {
+    return this.lookUpVariable(expr.keyword, expr)
   }
   visitBinaryExpr(expr: Expr.Binary): Value {
     const left = this.evaluate(expr.left)
@@ -217,6 +249,17 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     }
 
     return fun.call(this, args)
+  }
+  visitGetExpr(expr: Expr.Get): Value {
+    const object = this.evaluate(expr.object)
+    if (object instanceof Instance) {
+      return object.get(expr.name)
+    }
+
+    throw new RuntimeError(
+      expr.name,
+      "Only instances have properties.",
+    )
   }
   visitGroupingExpr(expr: Expr.Grouping): Value {
     return this.evaluate(expr.expression)
