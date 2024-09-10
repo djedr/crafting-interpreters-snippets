@@ -78,7 +78,24 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     return null
   }
   visitClassStmt(stmt: Stmt.Class): void {
+    let superclass: Class = null
+    if (stmt.superclass !== null) {
+      const superclassValue = this.evaluate(stmt.superclass)
+      if (!(superclassValue instanceof Class)) {
+        throw new RuntimeError(
+          stmt.superclass.name,
+          "Superclass must be a class",
+        )
+      }
+      superclass = superclassValue
+    }
+
     this.environment.define(stmt.name.lexeme, null)
+
+    if (stmt.superclass !== null) {
+      this.environment = new Environment(this.environment)
+      this.environment.define("super", superclass)
+    }
 
     const methods: Map<string, Fun> = new Map()
     for (const method of stmt.methods) {
@@ -86,7 +103,12 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
       methods.set(method.name.lexeme, fun)
     }
 
-    const klass: Class = new Class(stmt.name.lexeme, methods)
+    const klass: Class = new Class(stmt.name.lexeme, superclass, methods)
+
+    if (superclass !== null) {
+      this.environment = this.environment.enclosing
+    }
+    
     this.environment.assign(stmt.name, klass)
     return null
   }
@@ -173,6 +195,23 @@ export class Interpreter implements Expr.Visitor<Value>, Stmt.Visitor<void> {
     const value = this.evaluate(expr.value)
     object.set(expr.name, value)
     return value
+  }
+  visitSuperExpr(expr: Expr.Super): Value {
+    const distance = this.locals.get(expr)
+    const superclass = this.environment.getAt(distance, "super") as Class
+
+    const object = this.environment.getAt(distance - 1, "this") as Instance
+
+    const method = superclass.findMethod(expr.method.lexeme)
+
+    if (method === null) {
+      throw new RuntimeError(
+        expr.method,
+        `Undefined property '${expr.method.lexeme}'.`,
+      )
+    }
+
+    return method.bind(object)
   }
   visitThisExpr(expr: Expr.This): Value {
     return this.lookUpVariable(expr.keyword, expr)

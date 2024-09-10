@@ -5,9 +5,11 @@ import { Interpreter, Value } from "./Interpreter.js"
 
 export class Class implements Callable {
   readonly name: string
+  readonly superclass: Class
   private readonly methods: Map<string, Fun>
 
-  constructor(name: string, methods: Map<string, Fun>) {
+  constructor(name: string, superclass: Class, methods: Map<string, Fun>) {
+    this.superclass = superclass
     this.name = name
     this.methods = methods
   }
@@ -15,6 +17,10 @@ export class Class implements Callable {
   findMethod(name: string): Fun {
     if (this.methods.has(name)) {
       return this.methods.get(name)
+    }
+
+    if (this.superclass !== null) {
+      return this.superclass.findMethod(name)
     }
 
     return null

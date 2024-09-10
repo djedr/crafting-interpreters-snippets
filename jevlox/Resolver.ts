@@ -14,6 +14,7 @@ enum FunType {
 enum ClassType {
   None,
   Class,
+  Subclass,
 }
 
 export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
@@ -45,6 +46,22 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
 
     this.declare(stmt.name)
     this.define(stmt.name)
+    if (
+      stmt.superclass !== null &&
+      stmt.name.lexeme === stmt.superclass.name.lexeme
+    ) {
+      Jevlox.errorToken(stmt.superclass.name, "A class can't inherit from itself.")
+    }
+
+    if (stmt.superclass !== null) {
+      this.currentClass = ClassType.Subclass
+      this.resolveExpression(stmt.superclass)
+    }
+
+    if (stmt.superclass !== null) {
+      this.beginScope()
+      this.scopes.at(-1).set("super", true)
+    }
 
     this.beginScope()
     this.scopes.at(-1).set("this", true)
@@ -59,6 +76,8 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
     }
 
     this.endScope()
+
+    if (stmt.superclass !== null) this.endScope()
 
     this.currentClass = enclosingClass
 
@@ -102,7 +121,7 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
       if (this.currentFun === FunType.Initializer) {
         Jevlox.errorToken(stmt.keyword, "Can't return a value from an initializer.")
       }
-      
+
       this.resolveExpression(stmt.value)
     }
 
@@ -169,6 +188,24 @@ export class Resolver implements Expr.Visitor<void>, Stmt.Visitor<void> {
   visitSetExpr(expr: Expr.Set): void {
     this.resolveExpression(expr.value)
     this.resolveExpression(expr.object)
+    return null
+  }
+
+  visitSuperExpr(expr: Expr.Super): void {
+    if (this.currentClass === ClassType.None) {
+      Jevlox.errorToken(
+        expr.keyword,
+        "Can't use 'super' outside of a class.",
+      )
+    }
+    else if (this.currentClass !== ClassType.Subclass) {
+      Jevlox.errorToken(
+        expr.keyword,
+        "Can't use 'super' in a class with no superclass."
+      )
+    }
+
+    this.resolveLocal(expr, expr.keyword)
     return null
   }
 

@@ -16,6 +16,7 @@ export interface Visitor<R> {
   visitGetExpr(expr: Get): R
   visitSetExpr(expr: Set): R
   visitThisExpr(expr: This): R
+  visitSuperExpr(expr: Super): R
 }
 export class Binary extends Expr {
   constructor(left: Expr, operator: Token, right: Expr) {
@@ -148,4 +149,16 @@ export class This extends Expr {
     return visitor.visitThisExpr(this)
   }
   readonly keyword: Token
+}
+export class Super extends Expr {
+  constructor(keyword: Token, method: Token) {
+    super()
+    this.keyword = keyword
+    this.method = method
+  }
+  accept<R>(visitor: Visitor<R>): R {
+    return visitor.visitSuperExpr(this)
+  }
+  readonly keyword: Token
+  readonly method: Token
 }

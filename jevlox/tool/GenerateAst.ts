@@ -19,6 +19,7 @@ export class GenerateAst {
       "Get      : Expr object, Token name",
       "Set      : Expr object, Token name, Expr value",
       "This     : Token keyword",
+      "Super    : Token keyword, Token method",
     ], `import { Token } from "./Token.js"
 import { Literal as Lit } from "./Token.js"`)
 
@@ -31,8 +32,8 @@ import { Literal as Lit } from "./Token.js"`)
       "While      : Expr condition, Stmt body",
       "Fun        : Token name, Token[] params, Stmt[] body",
       "Return     : Token keyword, Expr value",
-      "Class      : Token name, Fun[] methods",
-    ], `import { Expr } from './Expr.js'
+      "Class      : Token name, Variable superclass, Fun[] methods",
+    ], `import { Expr, Variable } from './Expr.js'
 import { Token } from './Token.js'`)
   }
 
