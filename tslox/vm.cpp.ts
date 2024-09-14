@@ -1,8 +1,10 @@
 import { Chunk, makeChunk, OpCode } from "./chunk.js"
 import { Value } from "./common.js";
+import { compile } from "./compiler.js";
 import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
-#include "common.h"
+/* eslint-disable */
+#include "common.h" // eslint-disable-line
 
 const STACK_MAX = 256
 
@@ -94,8 +96,7 @@ const run = (): InterpretResult => {
   }
 }
 
-export const interpret = (chunk: Chunk): InterpretResult => {
-  vm.chunk = chunk
-  vm.ip = 0
-  return run()
+export const interpret = (source: string): InterpretResult => {
+  compile(source)
+  return InterpretResult.INTERPRET_OK
 }

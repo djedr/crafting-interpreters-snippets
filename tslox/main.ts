@@ -1,28 +1,44 @@
+import { exit } from "node:process"
+import * as fs from 'node:fs'
 import { addConstant, freeChunk, makeChunk, OpCode, writeChunk } from "./chunk.js"
 import { freeVm, initVm, interpret } from "./vm.js"
+import { readLine } from "./readLine.js"
+
+const repl = async () => {
+  for (;;) {
+    const line = await readLine()
+    if (line === null) break
+    interpret(line)
+  }
+}
+
+const runFile = (path: string) => {
+  return fs.readFileSync(path, 'utf8')
+}
+
+
+
+///
+/// main
+///
 
 initVm()
 
-const chunk = makeChunk()
+const argc = process.argv.length
 
-let constant = addConstant(chunk, 1.2)
-writeChunk(chunk, OpCode.OP_CONSTANT, 123)
-writeChunk(chunk, constant, 123)
+console.log('welcome to tslox')
+console.log('argc', argc)
 
-constant = addConstant(chunk, 3.4)
-writeChunk(chunk, OpCode.OP_CONSTANT, 123)
-writeChunk(chunk, constant, 123)
+if (argc === 2) {
+  repl()
+}
+else if (argc === 3) {
+  runFile(process.argv[2])
+}
+else {
+  // todo: proper message
+  console.error("Usage: tslox [path]")
+  exit(64)
+}
 
-writeChunk(chunk, OpCode.OP_ADD, 123)
-
-constant = addConstant(chunk, 5.6)
-writeChunk(chunk, OpCode.OP_CONSTANT, 123)
-writeChunk(chunk, constant, 123)
-
-writeChunk(chunk, OpCode.OP_DIVIDE, 123)
-writeChunk(chunk, OpCode.OP_NEGATE, 123)
-
-writeChunk(chunk, OpCode.OP_RETURN, 123)
-interpret(chunk)
 // freeVm()
-// freeChunk(chunk)
