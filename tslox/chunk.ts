@@ -6,11 +6,17 @@ interface ArrayBufferConstructor {
 }
 interface ArrayBuffer {
   resize(n: number): void
+  transfer(n: number): ArrayBuffer
 }
 declare var ArrayBuffer: ArrayBufferConstructor;
 
 export enum OpCode {
   OP_CONSTANT,
+  OP_ADD,
+  OP_SUBTRACT,
+  OP_MULTIPLY,
+  OP_DIVIDE,
+  OP_NEGATE,
   OP_RETURN,
 }
 
@@ -22,7 +28,7 @@ export interface Chunk {
 }
 
 export const makeChunk = (): Chunk => {
-  const buf = new ArrayBuffer(8, {maxByteLength: 8})
+  const buf = new ArrayBuffer(8, {maxByteLength: 1024*1024*1024})
   const arr = new Uint8Array(buf as unknown as ArrayBufferLike)
   return {
     count: 0,
@@ -34,6 +40,8 @@ export const makeChunk = (): Chunk => {
 
 export const writeChunk = (chunk: Chunk, byte: number, line: number) => {
   if (chunk.count >= chunk.code.byteLength) {
+    // todo?: likely this should use transfer rather than resize -- that is equivalent to realloc
+    //    sth like chunk.code.buffer = chunk.code.buffer.transfer(chunk.code.byteLength * 2) -- freeing the old buffer is left for gc, but maybe could be forced?
     (chunk.code.buffer as unknown as ArrayBuffer).resize(chunk.code.byteLength * 2)
     // todo: maybe more optimized array for line info, to be resized here
   }
