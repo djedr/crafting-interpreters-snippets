@@ -97,6 +97,18 @@ const run = (): InterpretResult => {
 }
 
 export const interpret = (source: string): InterpretResult => {
-  compile(source)
-  return InterpretResult.INTERPRET_OK
+  const chunk = makeChunk()
+
+  if (!compile(source, chunk)) {
+    // freeChunk(chunk)
+    return InterpretResult.INTERPRET_COMPILE_ERROR
+  }
+
+  vm.chunk = chunk
+  vm.ip = 0
+
+  const result = run()
+
+  // freeChunk(chunk)
+  return result
 }
