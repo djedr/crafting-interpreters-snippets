@@ -1,4 +1,4 @@
-import { Value } from "./common.js";
+import { Value } from "./value.js";
 import { makeValueArray, ValueArray, writeValueArray } from "./value.js";
 
 interface ArrayBufferConstructor {
@@ -12,10 +12,17 @@ declare var ArrayBuffer: ArrayBufferConstructor;
 
 export enum OpCode {
   OP_CONSTANT,
+  OP_NIL,
+  OP_TRUE,
+  OP_FALSE,
+  OP_EQUAL,
+  OP_GREATER,
+  OP_LESS,
   OP_ADD,
   OP_SUBTRACT,
   OP_MULTIPLY,
   OP_DIVIDE,
+  OP_NOT,
   OP_NEGATE,
   OP_RETURN,
 }

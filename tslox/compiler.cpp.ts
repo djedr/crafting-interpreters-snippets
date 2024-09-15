@@ -1,9 +1,10 @@
 import { addConstant, Chunk, OpCode, writeChunk } from "./chunk.js"
-import { Value } from "./common.js";
+import { Value } from "./value.js";
 import { disassembleChunk } from "./debug.js";
 import { initScanner, scanToken, Token, TokenType } from "./scanner.js"
 
 #include "common.h"
+#include "value.h"
 
 interface Parser {
   current: Token;
@@ -136,12 +137,27 @@ const binary = () => {
   parsePrecedence(rule.precedence + 1)
 
   switch (operatorType) {
-    case TokenType.PLUS:     emitByte(OpCode.OP_ADD); break
-    case TokenType.MINUS:    emitByte(OpCode.OP_SUBTRACT); break
-    case TokenType.STAR:     emitByte(OpCode.OP_MULTIPLY); break
-    case TokenType.SLASH:    emitByte(OpCode.OP_DIVIDE); break
+    case TokenType.BANG_EQUAL:    emitBytes(OpCode.OP_EQUAL, OpCode.OP_NOT); break
+    case TokenType.EQUAL_EQUAL:   emitByte(OpCode.OP_EQUAL); break
+    case TokenType.GREATER:       emitByte(OpCode.OP_GREATER); break
+    case TokenType.GREATER_EQUAL: emitBytes(OpCode.OP_LESS, OpCode.OP_NOT); break
+    case TokenType.LESS:          emitByte(OpCode.OP_LESS); break
+    case TokenType.LESS_EQUAL:    emitBytes(OpCode.OP_GREATER, OpCode.OP_NOT); break
+    case TokenType.PLUS:          emitByte(OpCode.OP_ADD); break
+    case TokenType.MINUS:         emitByte(OpCode.OP_SUBTRACT); break
+    case TokenType.STAR:          emitByte(OpCode.OP_MULTIPLY); break
+    case TokenType.SLASH:         emitByte(OpCode.OP_DIVIDE); break
     default:
       return // Unreachable.
+  }
+}
+
+const literal = () => {
+  switch (parser.previous.type) {
+    case TokenType.FALSE: emitByte(OpCode.OP_FALSE); break
+    case TokenType.NIL: emitByte(OpCode.OP_NIL); break
+    case TokenType.TRUE: emitByte(OpCode.OP_TRUE); break
+    default: return // Unreachable.
   }
 }
 
@@ -153,7 +169,7 @@ const grouping = () => {
 const number = () => {
   const previous = parser.previous
   const value = Number(previous.source.slice(previous.start, previous.start + previous.length))
-  emitConstant(value)
+  emitConstant(NUMBER_VAL(value))
 }
 
 const unary = () => {
@@ -164,6 +180,7 @@ const unary = () => {
 
   // Emit the operator instruction.
   switch (operatorType) {
+    case TokenType.BANG:  emitByte(OpCode.OP_NOT); break
     case TokenType.MINUS: emitByte(OpCode.OP_NEGATE); break
     default: return // Unreachable.
   }
@@ -183,31 +200,31 @@ rules[TokenType.PLUS]          = R(null,   binary, Precedence.TERM)
 rules[TokenType.SEMICOLON]     = R(null,     null, Precedence.NONE)
 rules[TokenType.SLASH]         = R(null,   binary, Precedence.FACTOR)
 rules[TokenType.STAR]          = R(null,   binary, Precedence.FACTOR)
-rules[TokenType.BANG]          = R(null,     null, Precedence.NONE)
-rules[TokenType.BANG_EQUAL]    = R(null,     null, Precedence.NONE)
+rules[TokenType.BANG]          = R(unary,    null, Precedence.NONE)
+rules[TokenType.BANG_EQUAL]    = R(null,   binary, Precedence.EQUALITY)
 rules[TokenType.EQUAL]         = R(null,     null, Precedence.NONE)
-rules[TokenType.EQUAL_EQUAL]   = R(null,     null, Precedence.NONE)
-rules[TokenType.GREATER]       = R(null,     null, Precedence.NONE)
-rules[TokenType.GREATER_EQUAL] = R(null,     null, Precedence.NONE)
-rules[TokenType.LESS]          = R(null,     null, Precedence.NONE)
-rules[TokenType.LESS_EQUAL]    = R(null,     null, Precedence.NONE)
+rules[TokenType.EQUAL_EQUAL]   = R(null,   binary, Precedence.EQUALITY)
+rules[TokenType.GREATER]       = R(null,   binary, Precedence.COMPARISON)
+rules[TokenType.GREATER_EQUAL] = R(null,   binary, Precedence.COMPARISON)
+rules[TokenType.LESS]          = R(null,   binary, Precedence.COMPARISON)
+rules[TokenType.LESS_EQUAL]    = R(null,   binary, Precedence.COMPARISON)
 rules[TokenType.IDENTIFIER]    = R(null,     null, Precedence.NONE)
 rules[TokenType.STRING]        = R(null,     null, Precedence.NONE)
 rules[TokenType.NUMBER]        = R(number,   null, Precedence.NONE)
 rules[TokenType.AND]           = R(null,     null, Precedence.NONE)
 rules[TokenType.CLASS]         = R(null,     null, Precedence.NONE)
 rules[TokenType.ELSE]          = R(null,     null, Precedence.NONE)
-rules[TokenType.FALSE]         = R(null,     null, Precedence.NONE)
+rules[TokenType.FALSE]         = R(literal,  null, Precedence.NONE)
 rules[TokenType.FOR]           = R(null,     null, Precedence.NONE)
 rules[TokenType.FUN]           = R(null,     null, Precedence.NONE)
 rules[TokenType.IF]            = R(null,     null, Precedence.NONE)
-rules[TokenType.NIL]           = R(null,     null, Precedence.NONE)
+rules[TokenType.NIL]           = R(literal,  null, Precedence.NONE)
 rules[TokenType.OR]            = R(null,     null, Precedence.NONE)
 rules[TokenType.PRINT]         = R(null,     null, Precedence.NONE)
 rules[TokenType.RETURN]        = R(null,     null, Precedence.NONE)
 rules[TokenType.SUPER]         = R(null,     null, Precedence.NONE)
 rules[TokenType.THIS]          = R(null,     null, Precedence.NONE)
-rules[TokenType.TRUE]          = R(null,     null, Precedence.NONE)
+rules[TokenType.TRUE]          = R(literal,  null, Precedence.NONE)
 rules[TokenType.VAR]           = R(null,     null, Precedence.NONE)
 rules[TokenType.WHILE]         = R(null,     null, Precedence.NONE)
 rules[TokenType.ERROR]         = R(null,     null, Precedence.NONE)

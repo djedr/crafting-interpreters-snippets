@@ -132,7 +132,7 @@ const skipWhitespace = () => {
 }
 
 const checkKeyword = (start: number, rest: string, type: TokenType): TokenType => {
-  if (scanner.current - scanner.start === rest.length && scanner.source.startsWith(rest, scanner.start + start)) {
+  if (scanner.current - scanner.start === start + rest.length && scanner.source.startsWith(rest, scanner.start + start)) {
     return type
   }
 
@@ -142,31 +142,31 @@ const checkKeyword = (start: number, rest: string, type: TokenType): TokenType =
 const identifierType = (): TokenType => {
   switch (scanner.source[scanner.start]) {
     case 'a': return checkKeyword(1, "nd", TokenType.AND)
-    case 'c': return checkKeyword(1, "lass", TokenType.AND)
-    case 'e': return checkKeyword(1, "lse", TokenType.AND)
+    case 'c': return checkKeyword(1, "lass", TokenType.CLASS)
+    case 'e': return checkKeyword(1, "lse", TokenType.ELSE)
     case 'f':
       if (scanner.current - scanner.start > 1) {
-        switch (scanner.source[scanner.current + 1]) {
+        switch (scanner.source[scanner.start + 1]) {
           case 'a': return checkKeyword(2, "lse", TokenType.FALSE)
           case 'o': return checkKeyword(2, "r", TokenType.FOR)
           case 'u': return checkKeyword(2, "n", TokenType.FUN)
         }
       }
-    case 'i': return checkKeyword(1, "f", TokenType.AND)
-    case 'n': return checkKeyword(1, "il", TokenType.AND)
-    case 'o': return checkKeyword(1, "r", TokenType.AND)
-    case 'p': return checkKeyword(1, "rint", TokenType.AND)
-    case 'r': return checkKeyword(1, "eturn", TokenType.AND)
-    case 's': return checkKeyword(1, "uper", TokenType.AND)
+    case 'i': return checkKeyword(1, "f", TokenType.IF)
+    case 'n': return checkKeyword(1, "il", TokenType.NIL)
+    case 'o': return checkKeyword(1, "r", TokenType.OR)
+    case 'p': return checkKeyword(1, "rint", TokenType.PRINT)
+    case 'r': return checkKeyword(1, "eturn", TokenType.RETURN)
+    case 's': return checkKeyword(1, "uper", TokenType.SUPER)
     case 't':
       if (scanner.current - scanner.start > 1) {
-        switch (scanner.source[scanner.current + 1]) {
+        switch (scanner.source[scanner.start + 1]) {
           case 'h': return checkKeyword(2, "is", TokenType.THIS)
           case 'r': return checkKeyword(2, "ue", TokenType.TRUE)
         }
       }
-    case 'v': return checkKeyword(1, "ar", TokenType.AND)
-    case 'w': return checkKeyword(1, "hile", TokenType.AND)
+    case 'v': return checkKeyword(1, "ar", TokenType.VAR)
+    case 'w': return checkKeyword(1, "hile", TokenType.WHILE)
   }
 
   return TokenType.IDENTIFIER
