@@ -2,6 +2,7 @@ import { addConstant, Chunk, OpCode, writeChunk } from "./chunk.js"
 import { Value } from "./value.js";
 import { disassembleChunk } from "./debug.js";
 import { initScanner, scanToken, Token, TokenType } from "./scanner.js"
+import { copyString } from "./object.js";
 
 #include "common.h"
 #include "value.h"
@@ -172,6 +173,14 @@ const number = () => {
   emitConstant(NUMBER_VAL(value))
 }
 
+const string = () => {
+  emitConstant(OBJ_VAL(copyString(
+    parser.previous.source,
+    parser.previous.start + 1,
+    parser.previous.length - 2,
+  )))
+}
+
 const unary = () => {
   const operatorType = parser.previous.type
 
@@ -209,7 +218,7 @@ rules[TokenType.GREATER_EQUAL] = R(null,   binary, Precedence.COMPARISON)
 rules[TokenType.LESS]          = R(null,   binary, Precedence.COMPARISON)
 rules[TokenType.LESS_EQUAL]    = R(null,   binary, Precedence.COMPARISON)
 rules[TokenType.IDENTIFIER]    = R(null,     null, Precedence.NONE)
-rules[TokenType.STRING]        = R(null,     null, Precedence.NONE)
+rules[TokenType.STRING]        = R(string,   null, Precedence.NONE)
 rules[TokenType.NUMBER]        = R(number,   null, Precedence.NONE)
 rules[TokenType.AND]           = R(null,     null, Precedence.NONE)
 rules[TokenType.CLASS]         = R(null,     null, Precedence.NONE)

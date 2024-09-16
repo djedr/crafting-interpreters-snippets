@@ -1,6 +1,9 @@
-#include "value.h"
+import { IS_OBJ, Obj, printObject, ObjString, isObjType } from "./object.js"
 
-export type Value = number | boolean | null
+#include "value.h"
+#include "object.h"
+
+export type Value = number | boolean | null | Obj
 
 export type ValueArray = Value[]
 
@@ -27,6 +30,9 @@ export const printValue = (value: Value) => {
   else if (IS_NUMBER(value)) {
     process.stdout.write(`${AS_NUMBER(value)}`)
   }
+  else if (IS_OBJ(value)) {
+    printObject(value)
+  }
   else {
     throw Error('not implemented')
   }
@@ -45,6 +51,12 @@ export const valuesEqual = (a: Value, b: Value): boolean => {
   }
   else if (IS_NUMBER(a)) {
     return AS_NUMBER(a) === AS_NUMBER(b)
+  }
+  else if (IS_OBJ(a)) {
+    const aString = AS_STRING(a)
+    const bString = AS_STRING(b)
+    return aString.length === bString.length &&
+      aString.chars === bString.chars
   }
   else {
     return false // Unreachable.

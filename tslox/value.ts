@@ -1,4 +1,5 @@
-export type Value = number | boolean | null
+import { IS_OBJ, Obj, printObject, ObjString, isObjType } from "./object.js"
+export type Value = number | boolean | null | Obj
 export type ValueArray = Value[]
 export const makeValueArray = (): ValueArray => {
   return []
@@ -20,6 +21,9 @@ export const printValue = (value: Value) => {
   else if ((typeof (value) === 'number')) {
     process.stdout.write(`${((value) as number)}`)
   }
+  else if (IS_OBJ(value)) {
+    printObject(value)
+  }
   else {
     throw Error('not implemented')
   }
@@ -37,6 +41,12 @@ export const valuesEqual = (a: Value, b: Value): boolean => {
   }
   else if ((typeof (a) === 'number')) {
     return ((a) as number) === ((b) as number)
+  }
+  else if (IS_OBJ(a)) {
+    const aString = (((a) as Obj) as ObjString)
+    const bString = (((b) as Obj) as ObjString)
+    return aString.length === bString.length &&
+      aString.chars === bString.chars
   }
   else {
     return false // Unreachable.

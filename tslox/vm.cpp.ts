@@ -3,9 +3,12 @@ import { Value, valuesEqual } from "./value.js";
 import { compile } from "./compiler.js";
 import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
-/* eslint-disable */
-#include "common.h" // eslint-disable-line
+import { ObjString, ObjType, isObjType, Obj, takeString } from "./object.js";
+import { freeObjects } from "./memory.js";
+
+#include "common.h"
 #include "value.h"
+#include "object.h"
 
 const STACK_MAX = 256
 
@@ -14,6 +17,7 @@ interface Vm {
   ip: number;
   stack: Value[];
   stackTop: number;
+  objects: Obj;
 }
 
 enum InterpretResult {
@@ -28,6 +32,7 @@ export const vm: Vm = {
   ip: 0,
   stack: Array(STACK_MAX).fill(0),
   stackTop: 0,
+  objects: null,
 }
 
 const resetStack = () => {
@@ -45,10 +50,11 @@ const runtimeError = (...args: string[]) => {
 
 export const initVm = () => {
   resetStack()
+  vm.objects = null
 }
 
 export const freeVm = () => {
-
+  freeObjects()
 }
 
 export const push = (value: Value) => {
@@ -67,6 +73,16 @@ const peek = (distance: number): Value => {
 
 const isFalsey = (value: Value): boolean => {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value))
+}
+
+const concatenate = () => {
+  const b = AS_STRING(pop())
+  const a = AS_STRING(pop())
+
+  const length = a.length + b.length
+  const chars = a.chars + b.chars
+  const result: ObjString = takeString(chars, length)
+  push(OBJ_VAL(result))
 }
 
 const READ_BYTE = () => {
@@ -119,7 +135,23 @@ const run = (): InterpretResult => {
       #define LT <
       case OpCode.OP_LESS:     BINARY_OP(BOOL_VAL, LT); break
       #undef LT
-      case OpCode.OP_ADD:      BINARY_OP(NUMBER_VAL, +); break
+      case OpCode.OP_ADD: {
+        if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+          concatenate()
+        }
+        else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+          const b = AS_NUMBER(pop())
+          const a = AS_NUMBER(pop())
+          push(NUMBER_VAL(a + b))
+        }
+        else {
+          runtimeError(
+            "Operands must be two numbers or two strings.",
+          )
+          return InterpretResult.INTERPRET_RUNTIME_ERROR
+        }
+        break
+      }
       case OpCode.OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break
       case OpCode.OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break
       case OpCode.OP_DIVIDE:   BINARY_OP(NUMBER_VAL, /); break
