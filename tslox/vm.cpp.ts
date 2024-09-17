@@ -5,6 +5,8 @@ import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
 import { ObjString, ObjType, isObjType, Obj, takeString } from "./object.js";
 import { freeObjects } from "./memory.js";
+import { Table } from "./table.js";
+import { freeTable, makeTable } from "./table.js";
 
 #include "common.h"
 #include "value.h"
@@ -17,6 +19,7 @@ interface Vm {
   ip: number;
   stack: Value[];
   stackTop: number;
+  strings: Table;
   objects: Obj;
 }
 
@@ -32,6 +35,7 @@ export const vm: Vm = {
   ip: 0,
   stack: Array(STACK_MAX).fill(0),
   stackTop: 0,
+  strings: null,
   objects: null,
 }
 
@@ -51,9 +55,11 @@ const runtimeError = (...args: string[]) => {
 export const initVm = () => {
   resetStack()
   vm.objects = null
+  vm.strings = makeTable()
 }
 
 export const freeVm = () => {
+  freeTable(vm.strings)
   freeObjects()
 }
 

@@ -2,3 +2,4 @@ vm.ts
 compiler.ts
 value.ts
 object.ts
+table.ts

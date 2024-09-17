@@ -1,3 +1,4 @@
+import { tableFindString, tableSet } from "./table.js";
 import { Value } from "./value.js";
 import { vm } from "./vm.js";
 
@@ -16,6 +17,7 @@ export interface ObjString extends Obj {
   type: ObjType.STRING;
   length: number;
   chars: string;
+  hash: number;
 }
 
 export const IS_OBJ = (value: any): value is Obj => {
@@ -33,16 +35,34 @@ const allocateObject = (type: ObjType): Obj => {
   return object
 }
 
-const allocateString = (chars: string, length: number): ObjString => {
-  return {
+const allocateString = (chars: string, length: number, hash: number): ObjString => {
+  const string = {
     ...allocateObject(ObjType.STRING),
     length,
     chars,
+    hash,
   }
+  tableSet(vm.strings, string, NIL_VAL)
+  return string
+}
+
+const hashString = (key: string, length: number): number => {
+  let hash = 2166136261
+  for (let i = 0; i < length; ++i) {
+    hash ^= key.charCodeAt(i)
+    hash *= 16777619
+  }
+  return hash >>> 0
 }
 
 export const takeString = (chars: string, length: number): ObjString => {
-  return allocateString(chars, length)
+  const hash = hashString(chars, length)
+  const interned = tableFindString(vm.strings, chars, length, hash)
+  if (interned !== null) {
+    // FREE_ARRAY(char, chars, length)
+    return interned
+  }
+  return allocateString(chars, length, hash)
 }
 
 export const isObjType = (value: Value, type: ObjType): boolean => {
@@ -55,7 +75,10 @@ export const copyString = (
   length: number,
 ): ObjString => {
   const chars = source.slice(start, start + length)
-  return allocateString(chars, length)
+  const hash = hashString(chars, length)
+  const interned = tableFindString(vm.strings, chars, length, hash)
+  if (interned !== null) return interned
+  return allocateString(chars, length, hash)
 }
 
 export const printObject = (value: Obj) => {

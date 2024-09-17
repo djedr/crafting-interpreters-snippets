@@ -43,10 +43,7 @@ export const valuesEqual = (a: Value, b: Value): boolean => {
     return ((a) as number) === ((b) as number)
   }
   else if (IS_OBJ(a)) {
-    const aString = (((a) as Obj) as ObjString)
-    const bString = (((b) as Obj) as ObjString)
-    return aString.length === bString.length &&
-      aString.chars === bString.chars
+    return ((a) as Obj) === ((b) as Obj)
   }
   else {
     return false // Unreachable.
