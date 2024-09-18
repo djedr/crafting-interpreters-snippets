@@ -48,6 +48,10 @@ const findEntry = (
         if (tombstone === null) tombstone = entry
       }
     }
+    else if (entry.key === key) {
+      // We found the key.
+      return entry
+    }
 
     index = (index + 1) % capacity
   }

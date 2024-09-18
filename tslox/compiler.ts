@@ -22,7 +22,7 @@ enum Precedence {
   CALL, // . ()
   PRIMARY,
 }
-type ParseFn = () => void
+type ParseFn = (canAssign: boolean) => void
 interface ParseRule {
   prefix: ParseFn;
   infix: ParseFn;
@@ -75,6 +75,14 @@ const consume = (type: TokenType, message: string) => {
   }
   errorAtCurrent(message)
 }
+const check = (type: TokenType): boolean => {
+  return parser.current.type === type
+}
+const match = (type: TokenType): boolean => {
+  if (!check(type)) return false
+  advance()
+  return true
+}
 const emitByte = (byte: number) => {
   writeChunk(currentChunk(), byte, parser.previous.line)
 }
@@ -103,7 +111,7 @@ const endCompiler = () => {
     disassembleChunk(currentChunk(), "code")
   }
 }
-const binary = () => {
+const binary = (canAssign: boolean) => {
   const operatorType = parser.previous.type
   const rule: ParseRule = getRule(operatorType)
   parsePrecedence(rule.precedence + 1)
@@ -122,7 +130,7 @@ const binary = () => {
       return // Unreachable.
   }
 }
-const literal = () => {
+const literal = (canAssign: boolean) => {
   switch (parser.previous.type) {
     case TokenType.FALSE: emitByte(OpCode.OP_FALSE); break
     case TokenType.NIL: emitByte(OpCode.OP_NIL); break
@@ -130,19 +138,32 @@ const literal = () => {
     default: return // Unreachable.
   }
 }
-const grouping = () => {
+const grouping = (canAssign: boolean) => {
   expression()
   consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
 }
-const number = () => {
+const number = (canAssign: boolean) => {
   const previous = parser.previous
   const value = Number(previous.source.slice(previous.start, previous.start + previous.length))
   emitConstant((value))
 }
-const string = () => {
+const string = (canAssign: boolean) => {
   emitConstant((copyString( parser.previous.source, parser.previous.start + 1, parser.previous.length - 2, )))
 }
-const unary = () => {
+const namedVariable = (name: Token, canAssign: boolean) => {
+  const arg = identifierConstant(name)
+  if (canAssign && match(TokenType.EQUAL)) {
+    expression()
+    emitBytes(OpCode.OP_SET_GLOBAL, arg)
+  }
+  else {
+    emitBytes(OpCode.OP_GET_GLOBAL, arg)
+  }
+}
+const variable = (canAssign: boolean) => {
+  namedVariable(parser.previous, canAssign)
+}
+const unary = (canAssign: boolean) => {
   const operatorType = parser.previous.type
   // Compile the operand.
   parsePrecedence(Precedence.UNARY)
@@ -174,7 +195,7 @@ rules[TokenType.GREATER] = R(null, binary, Precedence.COMPARISON)
 rules[TokenType.GREATER_EQUAL] = R(null, binary, Precedence.COMPARISON)
 rules[TokenType.LESS] = R(null, binary, Precedence.COMPARISON)
 rules[TokenType.LESS_EQUAL] = R(null, binary, Precedence.COMPARISON)
-rules[TokenType.IDENTIFIER] = R(null, null, Precedence.NONE)
+rules[TokenType.IDENTIFIER] = R(variable, null, Precedence.NONE)
 rules[TokenType.STRING] = R(string, null, Precedence.NONE)
 rules[TokenType.NUMBER] = R(number, null, Precedence.NONE)
 rules[TokenType.AND] = R(null, null, Precedence.NONE)
@@ -195,19 +216,33 @@ rules[TokenType.VAR] = R(null, null, Precedence.NONE)
 rules[TokenType.WHILE] = R(null, null, Precedence.NONE)
 rules[TokenType.ERROR] = R(null, null, Precedence.NONE)
 rules[TokenType.EOF] = R(null, null, Precedence.NONE)
-const parsePrecedence = (precendence: Precedence) => {
+const parsePrecedence = (precedence: Precedence) => {
   advance()
   const prefixRule = getRule(parser.previous.type).prefix
   if (prefixRule === null) {
     error("Expect expression.")
     return
   }
-  prefixRule()
-  while (precendence <= getRule(parser.current.type).precedence) {
+  const canAssign = precedence <= Precedence.ASSIGNMENT
+  prefixRule(canAssign)
+  while (precedence <= getRule(parser.current.type).precedence) {
     advance()
     const infixRule = getRule(parser.previous.type).infix
-    infixRule()
+    infixRule(canAssign)
   }
+  if (canAssign && match(TokenType.EQUAL)) {
+    error("Invalid assignment target.")
+  }
+}
+const identifierConstant = (name: Token): number => {
+  return makeConstant((copyString(name.source, name.start, name.length)))
+}
+const parseVariable = (errorMessage: string): number => {
+  consume(TokenType.IDENTIFIER, errorMessage)
+  return identifierConstant(parser.previous)
+}
+const defineVariable = (global: number) => {
+  emitBytes(OpCode.OP_DEFINE_GLOBAL, global)
 }
 const getRule = (type: TokenType): ParseRule => {
   return rules[type]
@@ -215,14 +250,73 @@ const getRule = (type: TokenType): ParseRule => {
 const expression = () => {
   parsePrecedence(Precedence.ASSIGNMENT)
 }
+const varDeclaration = () => {
+  const global: number = parseVariable("Expect variable name.")
+  if (match(TokenType.EQUAL)) {
+    expression()
+  }
+  else {
+    emitByte(OpCode.OP_NIL)
+  }
+  consume(TokenType.SEMICOLON, "Expect ';' after variable declaration.")
+  defineVariable(global)
+}
+const expressionStatement = () => {
+  expression()
+  consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+  emitByte(OpCode.OP_POP)
+}
+const printStatement = () => {
+  expression()
+  consume(TokenType.SEMICOLON, "Expect ';' after value.")
+  emitByte(OpCode.OP_PRINT)
+}
+const synchronize = () => {
+  parser.panicMode = false
+  while (parser.current.type !== TokenType.EOF) {
+    if (parser.previous.type === TokenType.SEMICOLON) return
+    switch (parser.current.type) {
+      case TokenType.CLASS:
+      case TokenType.FUN:
+      case TokenType.VAR:
+      case TokenType.FOR:
+      case TokenType.IF:
+      case TokenType.WHILE:
+      case TokenType.PRINT:
+      case TokenType.RETURN:
+        return
+      default:
+        ; // Do nothing.
+    }
+    advance()
+  }
+}
+const declaration = () => {
+  if (match(TokenType.VAR)) {
+    varDeclaration()
+  }
+  else {
+    statement()
+  }
+  if (parser.panicMode) synchronize()
+}
+const statement = () => {
+  if (match(TokenType.PRINT)) {
+    printStatement()
+  }
+  else {
+    expressionStatement()
+  }
+}
 export const compile = (source: string, chunk: Chunk): boolean => {
   initScanner(source)
   compilingChunk = chunk
   parser.hadError = false
   parser.panicMode = false
   advance()
-  expression()
-  consume(TokenType.EOF, "Expect end of expression.")
+  while (!match(TokenType.EOF)) {
+    declaration()
+  }
   endCompiler()
   return !parser.hadError
 }
