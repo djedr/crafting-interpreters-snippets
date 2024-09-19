@@ -138,6 +138,16 @@ const run = (): InterpretResult => {
       case OpCode.OP_TRUE:  push(BOOL_VAL(true)); break
       case OpCode.OP_FALSE: push(BOOL_VAL(false)); break
       case OpCode.OP_POP: pop(); break
+      case OpCode.OP_GET_LOCAL: {
+        const slot = READ_BYTE()
+        push(vm.stack[slot])
+        break
+      }
+      case OpCode.OP_SET_LOCAL: {
+        const slot = READ_BYTE()
+        vm.stack[slot] = peek(0)
+        break
+      }
       case OpCode.OP_GET_GLOBAL: {
         const name: ObjString = READ_STRING()
         const value = tableGet(vm.globals, name)

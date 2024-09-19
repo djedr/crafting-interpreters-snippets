@@ -36,12 +36,34 @@ interface ParseRule {
   precedence: Precedence;
 }
 
+interface Local {
+  name: Token;
+  depth: number;
+}
+
+interface Compiler {
+  locals: Local[];
+  localCount: number;
+  scopeDepth: number;
+}
+
 const parser: Parser = {
   current: null,
   previous: null,
   hadError: false,
   panicMode: false,
 }
+
+const makeLocals = (): Local[] => {
+  return Array.from({length: UINT8_COUNT}).map(() => ({depth: -1, name: null}))
+}
+
+let current: Compiler = {
+  localCount: 0,
+  scopeDepth: 0,
+  locals: makeLocals(),
+}
+
 let compilingChunk: Chunk
 
 const currentChunk = (): Chunk => {
@@ -63,7 +85,7 @@ const errorAt = (token: Token, message: string) => {
     process.stderr.write(` at '${token.source.slice(token.start, token.start + token.length)}'`)
   }
 
-  process.stderr.write(`: ${message}`)
+  process.stderr.write(`: ${message}\n`)
   parser.hadError = true
 }
 
@@ -118,7 +140,6 @@ const emitReturn = () => {
   emitByte(OpCode.OP_RETURN)
 }
 
-const UINT8_MAX = 255
 const makeConstant = (value: Value): number => {
   const constant = addConstant(currentChunk(), value)
   if (constant > UINT8_MAX) {
@@ -133,6 +154,20 @@ const emitConstant = (value: Value) => {
   emitBytes(OpCode.OP_CONSTANT, makeConstant(value))
 }
 
+const makeCompiler = (): Compiler => {
+  return {
+    localCount: 0,
+    scopeDepth: 0,
+    locals: makeLocals(),
+  }
+}
+
+const initCompiler = (compiler: Compiler) => {
+  compiler.localCount = 0
+  compiler.scopeDepth = 0
+  current = compiler
+}
+
 const endCompiler = () => {
   emitReturn()
 #ifdef DEBUG_PRINT_CODE
@@ -140,6 +175,22 @@ const endCompiler = () => {
     disassembleChunk(currentChunk(), "code")
   }
 #endif
+}
+
+const beginScope = () => {
+  current.scopeDepth += 1
+}
+
+const endScope = () => {
+  current.scopeDepth -= 1
+
+  while (
+    current.localCount > 0 &&
+    current.locals[current.localCount - 1].depth > current.scopeDepth
+  ) {
+    emitByte(OpCode.OP_POP)
+    current.localCount -= 1
+  }
 }
 
 const binary = (canAssign: boolean) => {
@@ -192,14 +243,24 @@ const string = (canAssign: boolean) => {
 }
 
 const namedVariable = (name: Token, canAssign: boolean) => {
-  const arg = identifierConstant(name)
+  let getOp: number, setOp: number
+  let arg: number = resolveLocal(current, name)
+  if (arg !== -1) {
+    getOp = OpCode.OP_GET_LOCAL
+    setOp = OpCode.OP_SET_LOCAL
+  }
+  else {
+    arg = identifierConstant(name)
+    getOp = OpCode.OP_GET_GLOBAL
+    setOp = OpCode.OP_SET_GLOBAL
+  }
 
   if (canAssign && match(TokenType.EQUAL)) {
     expression()
-    emitBytes(OpCode.OP_SET_GLOBAL, arg)
+    emitBytes(setOp, arg)
   }
   else {
-    emitBytes(OpCode.OP_GET_GLOBAL, arg)
+    emitBytes(getOp, arg)
   }
 }
 
@@ -291,12 +352,74 @@ const identifierConstant = (name: Token): number => {
   return makeConstant(OBJ_VAL(copyString(name.source, name.start, name.length)))
 }
 
+const identifiersEqual = (a: Token, b: Token): boolean => {
+  if (a.length !== b.length) return false
+  // todo: maybe there is a more performant way?
+  return a.source.startsWith(b.source.slice(b.start, b.start + b.length), a.start)
+}
+
+const resolveLocal = (compiler: Compiler, name: Token) => {
+  for (let i = compiler.localCount - 1; i >= 0; --i) {
+    const local = compiler.locals[i]
+    if (identifiersEqual(name, local.name)) {
+      if (local.depth === -1) {
+        error("Can't read local variable in its own initializer.")
+      }
+      return i
+    }
+  }
+
+  return -1
+}
+
+const addLocal = (name: Token) => {
+  if (current.localCount === UINT8_COUNT) {
+    error("Too many local variables in function.")
+    return
+  }
+
+  const local: Local = current.locals[current.localCount++]
+  local.name = name
+  local.depth = -1
+}
+
+const declareVariable = () => {
+  if (current.scopeDepth === 0) return
+
+  const name: Token = parser.previous
+  for (let i = current.localCount - 1; i >= 0; --i) {
+    const local = current.locals[i]
+    if (local.depth !== -1 && local.depth < current.scopeDepth) {
+      break
+    }
+
+    if (identifiersEqual(name, local.name)) {
+      error("Already a variable with this name in this scope.")
+    }
+  }
+
+  addLocal(name)
+}
+
 const parseVariable = (errorMessage: string): number => {
   consume(TokenType.IDENTIFIER, errorMessage)
+
+  declareVariable()
+  if (current.scopeDepth > 0) return 0
+
   return identifierConstant(parser.previous)
 }
 
+const markInitialized = () => {
+  current.locals[current.localCount - 1].depth = current.scopeDepth
+}
+
 const defineVariable = (global: number) => {
+  if (current.scopeDepth > 0) {
+    markInitialized()
+    return
+  }
+
   emitBytes(OpCode.OP_DEFINE_GLOBAL, global)
 }
 
@@ -306,6 +429,14 @@ const getRule = (type: TokenType): ParseRule => {
 
 const expression = () => {
   parsePrecedence(Precedence.ASSIGNMENT)
+}
+
+const block = () => {
+  while (!check(TokenType.RIGHT_BRACE) && !check(TokenType.EOF)) {
+    declaration()
+  }
+
+  consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
 }
 
 const varDeclaration = () => {
@@ -373,6 +504,11 @@ const statement = () => {
   if (match(TokenType.PRINT)) {
     printStatement()
   }
+  else if (match(TokenType.LEFT_BRACE)) {
+    beginScope()
+    block()
+    endScope()
+  }
   else {
     expressionStatement()
   }
@@ -380,6 +516,7 @@ const statement = () => {
 
 export const compile = (source: string, chunk: Chunk): boolean => {
   initScanner(source)
+  initCompiler(makeCompiler())
   compilingChunk = chunk
 
   parser.hadError = false

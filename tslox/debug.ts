@@ -37,6 +37,10 @@ export const disassembleInstruction = (chunk: Chunk, offset: number) => {
       return simpleInstruction("OP_TRUE", offset)
     case OpCode.OP_FALSE:
       return simpleInstruction("OP_FALSE", offset)
+    case OpCode.OP_GET_LOCAL:
+      return byteInstruction("OP_GET_LOCAL", chunk, offset)
+    case OpCode.OP_SET_LOCAL:
+      return byteInstruction("OP_SET_LOCAL", chunk, offset)
     case OpCode.OP_GET_GLOBAL:
       return constantInstruction("OP_GET_GLOBAL", chunk, offset)
     case OpCode.OP_DEFINE_GLOBAL:
@@ -76,4 +80,10 @@ export const disassembleInstruction = (chunk: Chunk, offset: number) => {
 const simpleInstruction = (name: string, offset: number) => {
   console.log(name)
   return offset + 1
+}
+
+const byteInstruction = (name: string, chunk: Chunk, offset: number) => {
+  const slot = chunk.code[offset + 1]
+  console.log(`${name.padEnd(16)} ${slot.toString().padStart(4)}`)
+  return offset + 2
 }
