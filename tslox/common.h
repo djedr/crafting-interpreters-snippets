@@ -7,4 +7,6 @@
 #define UINT8_MAX   255
 #define UINT8_COUNT (UINT8_MAX + 1)
 
+#define UINT16_MAX 65535
+
 #endif

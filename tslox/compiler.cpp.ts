@@ -136,6 +136,13 @@ const emitBytes = (byte1: number, byte2: number) => {
   emitByte(byte2)
 }
 
+const emitJump = (instruction: number) => {
+  emitByte(instruction)
+  emitByte(0xff)
+  emitByte(0xff)
+  return currentChunk().count - 2
+}
+
 const emitReturn = () => {
   emitByte(OpCode.OP_RETURN)
 }
@@ -152,6 +159,18 @@ const makeConstant = (value: Value): number => {
 
 const emitConstant = (value: Value) => {
   emitBytes(OpCode.OP_CONSTANT, makeConstant(value))
+}
+
+const patchJump = (offset: number) => {
+  // -2 to adjust for the bytecode for the jump offset itself.
+  const jump = currentChunk().count - offset - 2
+
+  if (jump > UINT16_MAX) {
+    error("Too much code to jump over.")
+  }
+
+  currentChunk().code[offset] = (jump >> 8) & 0xff
+  currentChunk().code[offset + 1] = jump & 0xff
 }
 
 const makeCompiler = (): Compiler => {
@@ -459,6 +478,24 @@ const expressionStatement = () => {
   emitByte(OpCode.OP_POP)
 }
 
+const ifStatement = () => {
+  consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")
+  expression()
+  consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
+
+  const thenJump = emitJump(OpCode.OP_JUMP_IF_FALSE)
+  emitByte(OpCode.OP_POP)
+  statement()
+  
+  const elseJump = emitJump(OpCode.OP_JUMP)
+
+  patchJump(thenJump)
+  emitByte(OpCode.OP_POP)
+
+  if (match(TokenType.ELSE)) statement()
+  patchJump(elseJump)
+}
+
 const printStatement = () => {
   expression()
   consume(TokenType.SEMICOLON, "Expect ';' after value.")
@@ -503,6 +540,9 @@ const declaration = () => {
 const statement = () => {
   if (match(TokenType.PRINT)) {
     printStatement()
+  }
+  else if (match(TokenType.IF)) {
+    ifStatement()
   }
   else if (match(TokenType.LEFT_BRACE)) {
     beginScope()

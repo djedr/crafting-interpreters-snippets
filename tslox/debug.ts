@@ -69,6 +69,10 @@ export const disassembleInstruction = (chunk: Chunk, offset: number) => {
       return simpleInstruction("OP_NEGATE", offset)
     case OpCode.OP_PRINT:
       return simpleInstruction("OP_PRINT", offset)
+    case OpCode.OP_JUMP:
+      return jumpInstruction("OP_JUMP", 1, chunk, offset)
+    case OpCode.OP_JUMP_IF_FALSE:
+      return jumpInstruction("OP_JUMP_IF_FALSE", 1, chunk, offset)
     case OpCode.OP_RETURN:
       return simpleInstruction("OP_RETURN", offset)
     default:
@@ -86,4 +90,11 @@ const byteInstruction = (name: string, chunk: Chunk, offset: number) => {
   const slot = chunk.code[offset + 1]
   console.log(`${name.padEnd(16)} ${slot.toString().padStart(4)}`)
   return offset + 2
+}
+
+const jumpInstruction = (name: string, sign: number, chunk: Chunk, offset: number) => {
+  let jump = chunk.code[offset + 1] << 8
+  jump |= chunk.code[offset + 2]
+  console.log(`${name.padEnd(16)} ${offset.toString().padStart(4)} -> ${offset + 3 + sign * jump}`)
+  return offset + 3
 }

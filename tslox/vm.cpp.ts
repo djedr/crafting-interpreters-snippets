@@ -101,6 +101,10 @@ const READ_BYTE = () => {
 const READ_CONSTANT = () => {
   return vm.chunk.constants[READ_BYTE()]
 }
+const READ_SHORT = () => {
+  vm.ip += 2
+  return (vm.chunk.code[vm.ip - 2] << 8) | vm.chunk.code[vm.ip - 1]
+}
 const READ_STRING = () => {
   return AS_STRING(READ_CONSTANT())
 }
@@ -217,6 +221,16 @@ const run = (): InterpretResult => {
       case OpCode.OP_PRINT: {
         printValue(pop())
         console.log()
+        break
+      }
+      case OpCode.OP_JUMP: {
+        const offset = READ_SHORT()
+        vm.ip += offset
+        break
+      }
+      case OpCode.OP_JUMP_IF_FALSE: {
+        const offset = READ_SHORT()
+        if (isFalsey(peek(0))) vm.ip += offset
         break
       }
       case OpCode.OP_RETURN: {
