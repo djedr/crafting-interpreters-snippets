@@ -136,6 +136,16 @@ const emitBytes = (byte1: number, byte2: number) => {
   emitByte(byte2)
 }
 
+const emitLoop = (loopStart: number) => {
+  emitByte(OpCode.OP_LOOP)
+
+  const offset = currentChunk().count - loopStart + 2
+  if (offset > UINT16_MAX) error("Loop body too large.")
+
+  emitByte((offset >> 8) & 0xff)
+  emitByte(offset & 0xff)
+}
+
 const emitJump = (instruction: number) => {
   emitByte(instruction)
   emitByte(0xff)
@@ -212,6 +222,15 @@ const endScope = () => {
   }
 }
 
+const and_ = (canAssign: boolean) => {
+  const endJump = emitJump(OpCode.OP_JUMP_IF_FALSE)
+
+  emitByte(OpCode.OP_POP)
+  parsePrecedence(Precedence.AND)
+
+  patchJump(endJump)
+}
+
 const binary = (canAssign: boolean) => {
   const operatorType = parser.previous.type
   const rule: ParseRule = getRule(operatorType)
@@ -251,6 +270,17 @@ const number = (canAssign: boolean) => {
   const previous = parser.previous
   const value = Number(previous.source.slice(previous.start, previous.start + previous.length))
   emitConstant(NUMBER_VAL(value))
+}
+
+const or_ = (canAssign: boolean) => {
+  const elseJump = emitJump(OpCode.OP_JUMP_IF_FALSE)
+  const endJump = emitJump(OpCode.OP_JUMP)
+
+  patchJump(elseJump)
+  emitByte(OpCode.OP_POP)
+
+  parsePrecedence(Precedence.OR)
+  patchJump(endJump)
 }
 
 const string = (canAssign: boolean) => {
@@ -326,7 +356,7 @@ rules[TokenType.LESS_EQUAL]    = R(null,   binary, Precedence.COMPARISON)
 rules[TokenType.IDENTIFIER]    = R(variable, null, Precedence.NONE)
 rules[TokenType.STRING]        = R(string,   null, Precedence.NONE)
 rules[TokenType.NUMBER]        = R(number,   null, Precedence.NONE)
-rules[TokenType.AND]           = R(null,     null, Precedence.NONE)
+rules[TokenType.AND]           = R(null,     and_, Precedence.AND)
 rules[TokenType.CLASS]         = R(null,     null, Precedence.NONE)
 rules[TokenType.ELSE]          = R(null,     null, Precedence.NONE)
 rules[TokenType.FALSE]         = R(literal,  null, Precedence.NONE)
@@ -334,7 +364,7 @@ rules[TokenType.FOR]           = R(null,     null, Precedence.NONE)
 rules[TokenType.FUN]           = R(null,     null, Precedence.NONE)
 rules[TokenType.IF]            = R(null,     null, Precedence.NONE)
 rules[TokenType.NIL]           = R(literal,  null, Precedence.NONE)
-rules[TokenType.OR]            = R(null,     null, Precedence.NONE)
+rules[TokenType.OR]            = R(null,      or_, Precedence.OR)
 rules[TokenType.PRINT]         = R(null,     null, Precedence.NONE)
 rules[TokenType.RETURN]        = R(null,     null, Precedence.NONE)
 rules[TokenType.SUPER]         = R(null,     null, Precedence.NONE)
@@ -502,6 +532,21 @@ const printStatement = () => {
   emitByte(OpCode.OP_PRINT)
 }
 
+const whileStatement = () => {
+  const loopStart = currentChunk().count
+  consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
+  expression()
+  consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
+
+  const exitJump = emitJump(OpCode.OP_JUMP_IF_FALSE)
+  emitByte(OpCode.OP_POP)
+  statement()
+  emitLoop(loopStart)
+
+  patchJump(exitJump)
+  emitByte(OpCode.OP_POP)
+}
+
 const synchronize = () => {
   parser.panicMode = false
 
@@ -543,6 +588,9 @@ const statement = () => {
   }
   else if (match(TokenType.IF)) {
     ifStatement()
+  }
+  else if (match(TokenType.WHILE)) {
+    whileStatement()
   }
   else if (match(TokenType.LEFT_BRACE)) {
     beginScope()

@@ -233,6 +233,11 @@ const run = (): InterpretResult => {
         if (isFalsey(peek(0))) vm.ip += offset
         break
       }
+      case OpCode.OP_LOOP: {
+        const offset = READ_SHORT()
+        vm.ip -= offset
+        break
+      }
       case OpCode.OP_RETURN: {
         // Exit interpreter.
         return InterpretResult.INTERPRET_OK

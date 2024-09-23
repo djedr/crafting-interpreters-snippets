@@ -107,6 +107,13 @@ const emitBytes = (byte1: number, byte2: number) => {
   emitByte(byte1)
   emitByte(byte2)
 }
+const emitLoop = (loopStart: number) => {
+  emitByte(OpCode.OP_LOOP)
+  const offset = currentChunk().count - loopStart + 2
+  if (offset > 65535) error("Loop body too large.")
+  emitByte((offset >> 8) & 0xff)
+  emitByte(offset & 0xff)
+}
 const emitJump = (instruction: number) => {
   emitByte(instruction)
   emitByte(0xff)
@@ -130,7 +137,7 @@ const emitConstant = (value: Value) => {
 const patchJump = (offset: number) => {
   // -2 to adjust for the bytecode for the jump offset itself.
   const jump = currentChunk().count - offset - 2
-  if (jump > 16383) {
+  if (jump > 65535) {
     error("Too much code to jump over.")
   }
   currentChunk().code[offset] = (jump >> 8) & 0xff
@@ -167,6 +174,12 @@ const endScope = () => {
     current.localCount -= 1
   }
 }
+const and_ = (canAssign: boolean) => {
+  const endJump = emitJump(OpCode.OP_JUMP_IF_FALSE)
+  emitByte(OpCode.OP_POP)
+  parsePrecedence(Precedence.AND)
+  patchJump(endJump)
+}
 const binary = (canAssign: boolean) => {
   const operatorType = parser.previous.type
   const rule: ParseRule = getRule(operatorType)
@@ -202,6 +215,14 @@ const number = (canAssign: boolean) => {
   const previous = parser.previous
   const value = Number(previous.source.slice(previous.start, previous.start + previous.length))
   emitConstant((value))
+}
+const or_ = (canAssign: boolean) => {
+  const elseJump = emitJump(OpCode.OP_JUMP_IF_FALSE)
+  const endJump = emitJump(OpCode.OP_JUMP)
+  patchJump(elseJump)
+  emitByte(OpCode.OP_POP)
+  parsePrecedence(Precedence.OR)
+  patchJump(endJump)
 }
 const string = (canAssign: boolean) => {
   emitConstant((copyString( parser.previous.source, parser.previous.start + 1, parser.previous.length - 2, )))
@@ -264,7 +285,7 @@ rules[TokenType.LESS_EQUAL] = R(null, binary, Precedence.COMPARISON)
 rules[TokenType.IDENTIFIER] = R(variable, null, Precedence.NONE)
 rules[TokenType.STRING] = R(string, null, Precedence.NONE)
 rules[TokenType.NUMBER] = R(number, null, Precedence.NONE)
-rules[TokenType.AND] = R(null, null, Precedence.NONE)
+rules[TokenType.AND] = R(null, and_, Precedence.AND)
 rules[TokenType.CLASS] = R(null, null, Precedence.NONE)
 rules[TokenType.ELSE] = R(null, null, Precedence.NONE)
 rules[TokenType.FALSE] = R(literal, null, Precedence.NONE)
@@ -272,7 +293,7 @@ rules[TokenType.FOR] = R(null, null, Precedence.NONE)
 rules[TokenType.FUN] = R(null, null, Precedence.NONE)
 rules[TokenType.IF] = R(null, null, Precedence.NONE)
 rules[TokenType.NIL] = R(literal, null, Precedence.NONE)
-rules[TokenType.OR] = R(null, null, Precedence.NONE)
+rules[TokenType.OR] = R(null, or_, Precedence.OR)
 rules[TokenType.PRINT] = R(null, null, Precedence.NONE)
 rules[TokenType.RETURN] = R(null, null, Precedence.NONE)
 rules[TokenType.SUPER] = R(null, null, Precedence.NONE)
@@ -405,6 +426,18 @@ const printStatement = () => {
   consume(TokenType.SEMICOLON, "Expect ';' after value.")
   emitByte(OpCode.OP_PRINT)
 }
+const whileStatement = () => {
+  const loopStart = currentChunk().count
+  consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
+  expression()
+  consume(TokenType.RIGHT_PAREN, "Expect ')' after condition.")
+  const exitJump = emitJump(OpCode.OP_JUMP_IF_FALSE)
+  emitByte(OpCode.OP_POP)
+  statement()
+  emitLoop(loopStart)
+  patchJump(exitJump)
+  emitByte(OpCode.OP_POP)
+}
 const synchronize = () => {
   parser.panicMode = false
   while (parser.current.type !== TokenType.EOF) {
@@ -440,6 +473,9 @@ const statement = () => {
   }
   else if (match(TokenType.IF)) {
     ifStatement()
+  }
+  else if (match(TokenType.WHILE)) {
+    whileStatement()
   }
   else if (match(TokenType.LEFT_BRACE)) {
     beginScope()
