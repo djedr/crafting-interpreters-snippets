@@ -508,6 +508,53 @@ const expressionStatement = () => {
   emitByte(OpCode.OP_POP)
 }
 
+const forStatement = () => {
+  beginScope()
+  consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.")
+  if (match(TokenType.SEMICOLON)) {
+    // No initializer.
+  }
+  else if (match(TokenType.VAR)) {
+    varDeclaration()
+  }
+  else {
+    expressionStatement()
+  }
+
+  let loopStart = currentChunk().count
+  let exitJump = -1
+  if (!match(TokenType.SEMICOLON)) {
+    expression()
+    consume(TokenType.SEMICOLON, "Expect ';' after loop condition.")
+
+    // Jump out of the loop if the condition is false.
+    exitJump = emitJump(OpCode.OP_JUMP_IF_FALSE)
+    emitByte(OpCode.OP_POP) // Condition.
+  }
+
+  if (!match(TokenType.RIGHT_PAREN)) {
+    const bodyJump = emitJump(OpCode.OP_JUMP)
+    const incrementStart = currentChunk().count
+    expression()
+    emitByte(OpCode.OP_POP)
+    consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.")
+
+    emitLoop(loopStart)
+    loopStart = incrementStart
+    patchJump(bodyJump)
+  }
+
+  statement()
+  emitLoop(loopStart)
+
+  if (exitJump !== -1) {
+    patchJump(exitJump)
+    emitByte(OpCode.OP_POP) // Condition.
+  }
+
+  endScope()
+}
+
 const ifStatement = () => {
   consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")
   expression()
@@ -585,6 +632,9 @@ const declaration = () => {
 const statement = () => {
   if (match(TokenType.PRINT)) {
     printStatement()
+  }
+  else if (match(TokenType.FOR)) {
+    forStatement()
   }
   else if (match(TokenType.IF)) {
     ifStatement()
