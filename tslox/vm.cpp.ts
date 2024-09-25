@@ -3,7 +3,7 @@ import { Value, valuesEqual } from "./value.js";
 import { compile } from "./compiler.js";
 import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
-import { ObjString, ObjType, isObjType, Obj, takeString } from "./object.js";
+import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun } from "./object.js";
 import { freeObjects } from "./memory.js";
 import { Table, tableDelete, tableGet, tableSet } from "./table.js";
 import { freeTable, makeTable } from "./table.js";
@@ -12,11 +12,19 @@ import { freeTable, makeTable } from "./table.js";
 #include "value.h"
 #include "object.h"
 
-const STACK_MAX = 256
+const FRAMES_MAX = 64
+const STACK_MAX = FRAMES_MAX * UINT8_COUNT
+
+interface CallFrame {
+  fun: ObjFun;
+  ip: number;
+  slots: Value[];
+}
 
 interface Vm {
-  chunk: Chunk;
-  ip: number;
+  frame: CallFrame[];
+  frameCount: number;
+
   stack: Value[];
   stackTop: number;
   globals: Table;
@@ -43,6 +51,7 @@ export const vm: Vm = {
 
 const resetStack = () => {
   vm.stackTop = 0
+  vm.frameCount = 0
 }
 
 const runtimeError = (...args: string[]) => {

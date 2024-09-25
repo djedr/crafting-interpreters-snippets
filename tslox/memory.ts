@@ -1,8 +1,15 @@
-import { Obj, ObjString, ObjType } from "./object.js"
+import { freeChunk } from "./chunk.js"
+import { Obj, ObjFun, ObjString, ObjType } from "./object.js"
 import { vm } from "./vm.js"
 
 const freeObject = (object: Obj) => {
   switch (object.type) {
+    case ObjType.FUN: {
+      // const fun: ObjFun = object as ObjFun
+      // freeChunk(fun.chunk)
+      // FREE(ObjFun, object)
+      break
+    }
     case ObjType.STRING:
       // const string: ObjString = object
       // FREE_ARRAY(char, string.chars, string.length + 1)

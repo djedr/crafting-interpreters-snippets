@@ -1,3 +1,4 @@
+import { Chunk, makeChunk } from "./chunk.js";
 import { tableFindString, tableSet } from "./table.js";
 import { Value } from "./value.js";
 import { vm } from "./vm.js";
@@ -6,11 +7,19 @@ import { vm } from "./vm.js";
 
 export enum ObjType {
   STRING,
+  FUN,
 }
 
 export interface Obj {
   type: ObjType;
   next: Obj;
+}
+
+export interface ObjFun extends Obj {
+  type: ObjType.FUN;
+  arity: number;
+  chunk: Chunk;
+  name: ObjString;
 }
 
 export interface ObjString extends Obj {
@@ -35,9 +44,23 @@ const allocateObject = (type: ObjType): Obj => {
   return object
 }
 
+export const newFunction = (): ObjFun => {
+  const fun: ObjFun = {
+    ...allocateObject(ObjType.FUN),
+    // to calm down typesctipt
+    type: ObjType.FUN,
+    arity: 0,
+    name: null,
+    chunk: makeChunk(),
+  }
+  return fun
+}
+
 const allocateString = (chars: string, length: number, hash: number): ObjString => {
-  const string = {
+  const string: ObjString = {
     ...allocateObject(ObjType.STRING),
+    // to calm down typescript
+    type: ObjType.STRING,
     length,
     chars,
     hash,
@@ -81,8 +104,19 @@ export const copyString = (
   return allocateString(chars, length, hash)
 }
 
+const printFunction = (fun: ObjFun) => {
+  if (fun.name === null) {
+    process.stdout.write("<script>")
+    return
+  }
+  process.stdout.write(`<fn ${fun.name.chars}>`)
+}
+
 export const printObject = (value: Obj) => {
   switch (OBJ_TYPE(value)) {
+    case ObjType.FUN:
+      printFunction(AS_FUN(value))
+      break
     case ObjType.STRING:
       process.stdout.write(AS_TSSTRING(value))
       break

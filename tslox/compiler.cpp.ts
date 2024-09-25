@@ -2,7 +2,7 @@ import { addConstant, Chunk, OpCode, writeChunk } from "./chunk.js"
 import { Value } from "./value.js";
 import { disassembleChunk } from "./debug.js";
 import { initScanner, scanToken, Token, TokenType } from "./scanner.js"
-import { copyString } from "./object.js";
+import { copyString, newFunction, ObjFun as ObjFun } from "./object.js";
 
 #include "common.h"
 #include "value.h"
@@ -41,7 +41,15 @@ interface Local {
   depth: number;
 }
 
+enum FunType {
+  FUN,
+  SCRIPT,
+}
+
 interface Compiler {
+  fun: ObjFun;
+  type: FunType;
+
   locals: Local[];
   localCount: number;
   scopeDepth: number;
@@ -59,15 +67,15 @@ const makeLocals = (): Local[] => {
 }
 
 let current: Compiler = {
+  fun: null,
+  type: FunType.SCRIPT,
   localCount: 0,
   scopeDepth: 0,
   locals: makeLocals(),
 }
 
-let compilingChunk: Chunk
-
 const currentChunk = (): Chunk => {
-  return compilingChunk
+  return current.fun.chunk
 }
 
 const errorAt = (token: Token, message: string) => {
@@ -185,25 +193,40 @@ const patchJump = (offset: number) => {
 
 const makeCompiler = (): Compiler => {
   return {
+    fun: null,
+    type: FunType.SCRIPT,
     localCount: 0,
     scopeDepth: 0,
     locals: makeLocals(),
   }
 }
 
-const initCompiler = (compiler: Compiler) => {
+const initCompiler = (compiler: Compiler, type: FunType) => {
+  compiler.fun = null
+  compiler.type = type
   compiler.localCount = 0
   compiler.scopeDepth = 0
+  compiler.fun = newFunction()
   current = compiler
+
+  const local: Local = current.locals[current.localCount++]
+  local.depth = 0
+  local.name.source = ""
+  local.name.start = 0
+  local.name.length = 0
 }
 
-const endCompiler = () => {
+const endCompiler = (): ObjFun => {
   emitReturn()
+  const fun: ObjFun = current.fun
+
 #ifdef DEBUG_PRINT_CODE
   if (!parser.hadError) {
-    disassembleChunk(currentChunk(), "code")
+    disassembleChunk(currentChunk(), fun.name !== null ? fun.name.chars : "<script>")
   }
 #endif
+
+  return fun
 }
 
 const beginScope = () => {
@@ -652,10 +675,9 @@ const statement = () => {
   }
 }
 
-export const compile = (source: string, chunk: Chunk): boolean => {
+export const compile = (source: string): ObjFun => {
   initScanner(source)
-  initCompiler(makeCompiler())
-  compilingChunk = chunk
+  initCompiler(makeCompiler(), FunType.SCRIPT)
 
   parser.hadError = false
   parser.panicMode = false
@@ -666,6 +688,6 @@ export const compile = (source: string, chunk: Chunk): boolean => {
     declaration()
   }
 
-  endCompiler()
-  return !parser.hadError
+  const fun: ObjFun = endCompiler()
+  return parser.hadError ? null: fun
 }
