@@ -22,7 +22,7 @@ interface CallFrame {
 }
 
 interface Vm {
-  frame: CallFrame[];
+  frames: CallFrame[];
   frameCount: number;
 
   stack: Value[];
@@ -39,9 +39,8 @@ enum InterpretResult {
 }
 
 export const vm: Vm = {
-  // dummy chunk to calm down typescript
-  chunk: makeChunk(),
-  ip: 0,
+  frames: [],
+  frameCount: 0,
   stack: Array(STACK_MAX).fill(0),
   stackTop: 0,
   globals: null,
@@ -57,14 +56,25 @@ const resetStack = () => {
 const runtimeError = (...args: string[]) => {
   console.error(...args)
 
-  const instruction = vm.ip - 1
-  const line = vm.chunk.lines[instruction]
+  const frame: CallFrame = vm.frames[vm.frameCount - 1]
+  const instruction = frame.ip - 1
+  const line = frame.fun.chunk.lines[instruction]
   console.error(`[line ${line}] in script`)
   resetStack()
 }
 
+const makeFrames = (): CallFrame[] => {
+  return Array.from({length: FRAMES_MAX}).map(() => ({
+    fun: null,
+    ip: 0,
+    slots: [],
+  }))
+}
+
+
 export const initVm = () => {
   resetStack()
+  vm.frames = makeFrames()
   vm.objects = null
   vm.globals = makeTable()
   vm.strings = makeTable()
@@ -104,19 +114,6 @@ const concatenate = () => {
   push(OBJ_VAL(result))
 }
 
-const READ_BYTE = () => {
-  return vm.chunk.code[vm.ip++]
-}
-const READ_CONSTANT = () => {
-  return vm.chunk.constants[READ_BYTE()]
-}
-const READ_SHORT = () => {
-  vm.ip += 2
-  return (vm.chunk.code[vm.ip - 2] << 8) | vm.chunk.code[vm.ip - 1]
-}
-const READ_STRING = () => {
-  return AS_STRING(READ_CONSTANT())
-}
 #define BINARY_OP(valueType, op) \
   do { \
     if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
@@ -129,6 +126,20 @@ const READ_STRING = () => {
   } while (false)
 
 const run = (): InterpretResult => {
+  const frame: CallFrame = vm.frames[vm.frameCount - 1]
+
+#define READ_BYTE() (frame.fun.chunk.code[frame.ip++])
+
+#define READ_SHORT() \
+  (frame.ip += 2, \
+    ((frame.fun.chunk.code[frame.ip - 2] << 8) | \
+    frame.fun.chunk.code[frame.ip - 1]))
+
+#define READ_CONSTANT() \
+    (frame.fun.chunk.constants[READ_BYTE()])
+
+#define READ_STRING() AS_STRING(READ_CONSTANT())
+
   for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
     process.stdout.write("        ")
@@ -138,7 +149,10 @@ const run = (): InterpretResult => {
       process.stdout.write(" ]")
     }
     console.log()
-    disassembleInstruction(vm.chunk, vm.ip)
+    disassembleInstruction(
+      frame.fun.chunk,
+      frame.ip,
+    )
 #endif
     let instruction: number
     switch (instruction = READ_BYTE()) {
@@ -153,12 +167,12 @@ const run = (): InterpretResult => {
       case OpCode.OP_POP: pop(); break
       case OpCode.OP_GET_LOCAL: {
         const slot = READ_BYTE()
-        push(vm.stack[slot])
+        push(frame.slots[slot])
         break
       }
       case OpCode.OP_SET_LOCAL: {
         const slot = READ_BYTE()
-        vm.stack[slot] = peek(0)
+        frame.slots[slot] = peek(0)
         break
       }
       case OpCode.OP_GET_GLOBAL: {
@@ -234,17 +248,17 @@ const run = (): InterpretResult => {
       }
       case OpCode.OP_JUMP: {
         const offset = READ_SHORT()
-        vm.ip += offset
+        frame.ip += offset
         break
       }
       case OpCode.OP_JUMP_IF_FALSE: {
         const offset = READ_SHORT()
-        if (isFalsey(peek(0))) vm.ip += offset
+        if (isFalsey(peek(0))) frame.ip += offset
         break
       }
       case OpCode.OP_LOOP: {
         const offset = READ_SHORT()
-        vm.ip -= offset
+        frame.ip -= offset
         break
       }
       case OpCode.OP_RETURN: {
@@ -256,18 +270,15 @@ const run = (): InterpretResult => {
 }
 
 export const interpret = (source: string): InterpretResult => {
-  const chunk = makeChunk()
+  const fun: ObjFun = compile(source)
+  if (fun === null) return InterpretResult.INTERPRET_COMPILE_ERROR
 
-  if (!compile(source, chunk)) {
-    // freeChunk(chunk)
-    return InterpretResult.INTERPRET_COMPILE_ERROR
-  }
+  push(OBJ_VAL(fun))
+  const frame: CallFrame = vm.frames[vm.frameCount++]
+  frame.fun = fun
+  // todo: maybe frame should have it's own .code pointer
+  frame.ip = 0
+  frame.slots = vm.stack
 
-  vm.chunk = chunk
-  vm.ip = 0
-
-  const result = run()
-
-  // freeChunk(chunk)
-  return result
+  return run()
 }

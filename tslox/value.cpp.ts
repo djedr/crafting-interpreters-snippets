@@ -34,6 +34,7 @@ export const printValue = (value: Value) => {
     printObject(value)
   }
   else {
+    console.error(value)
     throw Error('not implemented')
   }
 }

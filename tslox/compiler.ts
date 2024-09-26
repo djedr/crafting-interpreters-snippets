@@ -37,6 +37,7 @@ enum FunType {
   SCRIPT,
 }
 interface Compiler {
+  enclosing: Compiler;
   fun: ObjFun;
   type: FunType;
   locals: Local[];
@@ -50,9 +51,19 @@ const parser: Parser = {
   panicMode: false,
 }
 const makeLocals = (): Local[] => {
-  return Array.from({length: (255 + 1)}).map(() => ({depth: -1, name: null}))
+  return Array.from({length: (255 + 1)}).map(() => ({
+    depth: -1,
+    name: {
+      type: TokenType.ERROR,
+      source: "",
+      start: 0,
+      length: 0,
+      line: 0,
+    }
+  }))
 }
 let current: Compiler = {
+  enclosing: null,
   fun: null,
   type: FunType.SCRIPT,
   localCount: 0,
@@ -152,6 +163,7 @@ const patchJump = (offset: number) => {
 }
 const makeCompiler = (): Compiler => {
   return {
+    enclosing: null,
     fun: null,
     type: FunType.SCRIPT,
     localCount: 0,
@@ -160,12 +172,16 @@ const makeCompiler = (): Compiler => {
   }
 }
 const initCompiler = (compiler: Compiler, type: FunType) => {
+  compiler.enclosing = current
   compiler.fun = null
   compiler.type = type
   compiler.localCount = 0
   compiler.scopeDepth = 0
   compiler.fun = newFunction()
   current = compiler
+  if (type !== FunType.SCRIPT) {
+    current.fun.name = copyString(parser.previous.source, parser.previous.start, parser.previous.length)
+  }
   const local: Local = current.locals[current.localCount++]
   local.depth = 0
   local.name.source = ""
@@ -178,6 +194,7 @@ const endCompiler = (): ObjFun => {
   if (!parser.hadError) {
     disassembleChunk(currentChunk(), fun.name !== null ? fun.name.chars : "<script>")
   }
+  current = current.enclosing
   return fun
 }
 const beginScope = () => {
@@ -390,6 +407,7 @@ const parseVariable = (errorMessage: string): number => {
   return identifierConstant(parser.previous)
 }
 const markInitialized = () => {
+  if (current.scopeDepth === 0) return
   current.locals[current.localCount - 1].depth = current.scopeDepth
 }
 const defineVariable = (global: number) => {
@@ -410,6 +428,33 @@ const block = () => {
     declaration()
   }
   consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
+}
+const fun = (type: FunType) => {
+  let compiler: Compiler = makeCompiler()
+  initCompiler(compiler, type)
+  beginScope()
+  consume(TokenType.LEFT_PAREN, "Expect '(' after function name.")
+  if (!check(TokenType.RIGHT_PAREN)) {
+    do {
+      current.fun.arity++
+      if (current.fun.arity > 255) {
+        errorAtCurrent("Can't have more than 255 parameters.")
+      }
+      const constant = parseVariable("Expect parameter name.")
+      defineVariable(constant)
+    } while (match(TokenType.COMMA))
+  }
+  consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+  consume(TokenType.LEFT_BRACE, "Expect '{' before function body.")
+  block()
+  const fun: ObjFun = endCompiler()
+  emitBytes(OpCode.OP_CONSTANT, makeConstant((fun)))
+}
+const funDeclaration = () => {
+  const global = parseVariable("Expect function name.")
+  markInitialized()
+  fun(FunType.FUN)
+  defineVariable(global)
 }
 const varDeclaration = () => {
   const global: number = parseVariable("Expect variable name.")
@@ -517,7 +562,10 @@ const synchronize = () => {
   }
 }
 const declaration = () => {
-  if (match(TokenType.VAR)) {
+  if (match(TokenType.FUN)) {
+    funDeclaration()
+  }
+  else if (match(TokenType.VAR)) {
     varDeclaration()
   }
   else {
