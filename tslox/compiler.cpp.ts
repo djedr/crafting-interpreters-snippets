@@ -292,6 +292,11 @@ const binary = (canAssign: boolean) => {
   }
 }
 
+const call = (canAssign: boolean) => {
+  const argCount = argumentList()
+  emitBytes(OpCode.OP_CALL, argCount)
+}
+
 const literal = (canAssign: boolean) => {
   switch (parser.previous.type) {
     case TokenType.FALSE: emitByte(OpCode.OP_FALSE); break
@@ -374,7 +379,7 @@ const unary = (canAssign: boolean) => {
 const R = (prefix: ParseFn, infix: ParseFn, precedence: Precedence): ParseRule => ({prefix, infix, precedence})
 
 const rules: ParseRule[] = []
-rules[TokenType.LEFT_PAREN]    = R(grouping, null, Precedence.NONE)
+rules[TokenType.LEFT_PAREN]    = R(grouping, call, Precedence.CALL)
 rules[TokenType.RIGHT_PAREN]   = R(null,     null, Precedence.NONE)
 rules[TokenType.LEFT_BRACE]    = R(null,     null, Precedence.NONE)
 rules[TokenType.RIGHT_BRACE]   = R(null,     null, Precedence.NONE)
@@ -511,6 +516,21 @@ const defineVariable = (global: number) => {
   }
 
   emitBytes(OpCode.OP_DEFINE_GLOBAL, global)
+}
+
+const argumentList = (): number => {
+  let argCount = 0
+  if (!check(TokenType.RIGHT_PAREN)) {
+    do {
+      expression()
+      if (argCount === 255) {
+        error("Can't have more than 255 arguments.")
+      }
+      argCount++
+    } while (match(TokenType.COMMA))
+  }
+  consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
+  return argCount
 }
 
 const getRule = (type: TokenType): ParseRule => {

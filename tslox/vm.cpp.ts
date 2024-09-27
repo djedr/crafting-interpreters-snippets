@@ -3,7 +3,7 @@ import { Value, valuesEqual } from "./value.js";
 import { compile } from "./compiler.js";
 import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
-import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun } from "./object.js";
+import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ } from "./object.js";
 import { freeObjects } from "./memory.js";
 import { Table, tableDelete, tableGet, tableSet } from "./table.js";
 import { freeTable, makeTable } from "./table.js";
@@ -18,7 +18,8 @@ const STACK_MAX = FRAMES_MAX * UINT8_COUNT
 interface CallFrame {
   fun: ObjFun;
   ip: number;
-  slots: Value[];
+  slotsIndex: number;
+  // slots: Value[];
 }
 
 interface Vm {
@@ -56,10 +57,19 @@ const resetStack = () => {
 const runtimeError = (...args: string[]) => {
   console.error(...args)
 
-  const frame: CallFrame = vm.frames[vm.frameCount - 1]
-  const instruction = frame.ip - 1
-  const line = frame.fun.chunk.lines[instruction]
-  console.error(`[line ${line}] in script`)
+  for (let i = vm.frameCount - 1; i >= 0; --i) {
+    const frame: CallFrame = vm.frames[i]
+    const fun: ObjFun = frame.fun
+    const instruction = frame.ip - 1
+    process.stderr.write(`[line ${fun.chunk.lines[instruction]}] in `)
+    if (fun.name === null) {
+      process.stderr.write(`script\n`)
+    }
+    else {
+      process.stderr.write(`${fun.name.chars}()\n`)
+    }
+  }
+
   resetStack()
 }
 
@@ -67,7 +77,8 @@ const makeFrames = (): CallFrame[] => {
   return Array.from({length: FRAMES_MAX}).map(() => ({
     fun: null,
     ip: 0,
-    slots: [],
+    slotsIndex: 0,
+    // slots: [],
   }))
 }
 
@@ -100,6 +111,40 @@ const peek = (distance: number): Value => {
   return vm.stack[vm.stackTop - 1 - distance]
 }
 
+const call = (fun: ObjFun, argCount: number): boolean => {
+  if (argCount !== fun.arity) {
+    runtimeError(`Expected ${fun.arity} arguments but got ${argCount}.`)
+    return false
+  }
+
+  if (vm.frameCount === FRAMES_MAX) {
+    runtimeError("Stack overflow.")
+    return false
+  }
+
+  const frame: CallFrame = vm.frames[vm.frameCount++]
+  frame.fun = fun
+  // todo: maybe frame should have it's own .code pointer
+  frame.ip = 0
+  // note: slots is supposed to b a window into stack
+  // frame.slots = vm.stackTop - argCount - 1
+  frame.slotsIndex = vm.stackTop - argCount - 1
+  return true
+}
+
+const callValue = (callee: Value, argCount: number): boolean => {
+  if (IS_OBJ(callee)) {
+    switch (OBJ_TYPE(callee)) {
+      case ObjType.FUN:
+        return call(AS_FUN(callee), argCount)
+      default:
+        break // Non-callable object type
+    }
+  }
+  runtimeError("Can only call functions and classes.")
+  return false
+}
+
 const isFalsey = (value: Value): boolean => {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value))
 }
@@ -126,7 +171,7 @@ const concatenate = () => {
   } while (false)
 
 const run = (): InterpretResult => {
-  const frame: CallFrame = vm.frames[vm.frameCount - 1]
+  let frame: CallFrame = vm.frames[vm.frameCount - 1]
 
 #define READ_BYTE() (frame.fun.chunk.code[frame.ip++])
 
@@ -167,12 +212,14 @@ const run = (): InterpretResult => {
       case OpCode.OP_POP: pop(); break
       case OpCode.OP_GET_LOCAL: {
         const slot = READ_BYTE()
-        push(frame.slots[slot])
+        push(vm.stack[frame.slotsIndex + slot])
+        // push(frame.slots[slot])
         break
       }
       case OpCode.OP_SET_LOCAL: {
         const slot = READ_BYTE()
-        frame.slots[slot] = peek(0)
+        vm.stack[frame.slotsIndex + slot] = peek(0)
+        // frame.slots[slot] = peek(0)
         break
       }
       case OpCode.OP_GET_GLOBAL: {
@@ -261,6 +308,14 @@ const run = (): InterpretResult => {
         frame.ip -= offset
         break
       }
+      case OpCode.OP_CALL: {
+        const argCount = READ_BYTE()
+        if (!callValue(peek(argCount), argCount)) {
+          return InterpretResult.INTERPRET_RUNTIME_ERROR
+        }
+        frame = vm.frames[vm.frameCount - 1]
+        break
+      }
       case OpCode.OP_RETURN: {
         // Exit interpreter.
         return InterpretResult.INTERPRET_OK
@@ -274,11 +329,7 @@ export const interpret = (source: string): InterpretResult => {
   if (fun === null) return InterpretResult.INTERPRET_COMPILE_ERROR
 
   push(OBJ_VAL(fun))
-  const frame: CallFrame = vm.frames[vm.frameCount++]
-  frame.fun = fun
-  // todo: maybe frame should have it's own .code pointer
-  frame.ip = 0
-  frame.slots = vm.stack
+  call(fun, 0)
 
   return run()
 }
