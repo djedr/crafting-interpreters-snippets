@@ -3,7 +3,7 @@ import { Value, valuesEqual } from "./value.js";
 import { compile } from "./compiler.js";
 import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
-import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ } from "./object.js";
+import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ, NativeFn, copyString, newNative, ObjNative } from "./object.js";
 import { freeObjects } from "./memory.js";
 import { Table, tableDelete, tableGet, tableSet } from "./table.js";
 import { freeTable, makeTable } from "./table.js";
@@ -49,6 +49,10 @@ export const vm: Vm = {
   objects: null,
 }
 
+const clockNative = (argCount: number, args: Value[]): Value => {
+  return NUMBER_VAL(Date.now() / 1000)
+}
+
 const resetStack = () => {
   vm.stackTop = 0
   vm.frameCount = 0
@@ -73,6 +77,14 @@ const runtimeError = (...args: string[]) => {
   resetStack()
 }
 
+const defineNative = (name: string, fun: NativeFn) => {
+  push(OBJ_VAL(copyString(name, 0, name.length)))
+  push(OBJ_VAL(newNative(fun)))
+  tableSet(vm.globals, AS_STRING(vm.stack[0]), vm.stack[1])
+  pop()
+  pop()
+}
+
 const makeFrames = (): CallFrame[] => {
   return Array.from({length: FRAMES_MAX}).map(() => ({
     fun: null,
@@ -89,6 +101,8 @@ export const initVm = () => {
   vm.objects = null
   vm.globals = makeTable()
   vm.strings = makeTable()
+
+  defineNative("clock", clockNative)
 }
 
 export const freeVm = () => {
@@ -137,6 +151,16 @@ const callValue = (callee: Value, argCount: number): boolean => {
     switch (OBJ_TYPE(callee)) {
       case ObjType.FUN:
         return call(AS_FUN(callee), argCount)
+      case ObjType.NATIVE: {
+        const native: NativeFn = AS_NATIVE(callee)
+        // todo: make sure this slice is ok
+        // todo2: better way?
+        const args = vm.stack.slice(vm.stackTop, -argCount)
+        const result: Value = native(argCount, args)
+        vm.stackTop -= argCount + 1
+        push(result)
+        return true
+      }
       default:
         break // Non-callable object type
     }
@@ -317,8 +341,17 @@ const run = (): InterpretResult => {
         break
       }
       case OpCode.OP_RETURN: {
-        // Exit interpreter.
-        return InterpretResult.INTERPRET_OK
+        const result: Value = pop()
+        vm.frameCount--
+        if (vm.frameCount === 0) {
+          pop()
+          return InterpretResult.INTERPRET_OK
+        }
+
+        vm.stackTop = frame.slotsIndex
+        push(result)
+        frame = vm.frames[vm.frameCount - 1]
+        break
       }
     }
   }

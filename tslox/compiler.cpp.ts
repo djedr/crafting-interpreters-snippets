@@ -173,6 +173,7 @@ const emitJump = (instruction: number) => {
 }
 
 const emitReturn = () => {
+  emitByte(OpCode.OP_NIL)
   emitByte(OpCode.OP_RETURN)
 }
 
@@ -671,6 +672,21 @@ const printStatement = () => {
   emitByte(OpCode.OP_PRINT)
 }
 
+const returnStatement = () => {
+  if (current.type === FunType.SCRIPT) {
+    error("Can't return from top-level code.")
+  }
+
+  if (match(TokenType.SEMICOLON)) {
+    emitReturn()
+  }
+  else {
+    expression()
+    consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+    emitByte(OpCode.OP_RETURN)
+  }
+}
+
 const whileStatement = () => {
   const loopStart = currentChunk().count
   consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
@@ -733,6 +749,9 @@ const statement = () => {
   }
   else if (match(TokenType.IF)) {
     ifStatement()
+  }
+  else if (match(TokenType.RETURN)) {
+    returnStatement()
   }
   else if (match(TokenType.WHILE)) {
     whileStatement()

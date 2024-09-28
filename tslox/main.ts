@@ -13,7 +13,7 @@ const repl = async () => {
 }
 
 const runFile = (path: string) => {
-  return fs.readFileSync(path, 'utf8')
+  return interpret(fs.readFileSync(path, 'utf8'))
 }
 
 
@@ -33,6 +33,7 @@ if (argc === 2) {
   repl()
 }
 else if (argc === 3) {
+  console.log(process.argv)
   runFile(process.argv[2])
 }
 else {

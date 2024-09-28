@@ -10,6 +10,9 @@ const freeObject = (object: Obj) => {
       // FREE(ObjFun, object)
       break
     }
+    case ObjType.NATIVE:
+      // FREE(ObjNative, object)
+      break
     case ObjType.STRING:
       // const string: ObjString = object
       // FREE_ARRAY(char, string.chars, string.length + 1)

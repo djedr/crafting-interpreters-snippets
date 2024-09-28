@@ -6,8 +6,9 @@ import { vm } from "./vm.js";
 #include "object.h"
 
 export enum ObjType {
-  STRING,
   FUN,
+  NATIVE,
+  STRING,
 }
 
 export interface Obj {
@@ -20,6 +21,12 @@ export interface ObjFun extends Obj {
   arity: number;
   chunk: Chunk;
   name: ObjString;
+}
+
+export type NativeFn = (argCount: number, args: Value[]) => Value
+
+export interface ObjNative extends Obj {
+  fun: NativeFn;
 }
 
 export interface ObjString extends Obj {
@@ -54,6 +61,16 @@ export const newFunction = (): ObjFun => {
     chunk: makeChunk(),
   }
   return fun
+}
+
+export const newNative = (fun: NativeFn): ObjNative => {
+  const native: ObjNative = {
+    ...allocateObject(ObjType.NATIVE),
+    // to calm down typesctipt
+    type: ObjType.NATIVE,
+    fun,
+  }
+  return native
 }
 
 const allocateString = (chars: string, length: number, hash: number): ObjString => {
@@ -116,6 +133,9 @@ export const printObject = (value: Obj) => {
   switch (OBJ_TYPE(value)) {
     case ObjType.FUN:
       printFunction(AS_FUN(value))
+      break
+    case ObjType.NATIVE:
+      process.stdout.write(`<native fn>`)
       break
     case ObjType.STRING:
       process.stdout.write(AS_TSSTRING(value))

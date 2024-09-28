@@ -3,6 +3,7 @@ import { Value } from "./value.js";
 import { disassembleChunk } from "./debug.js";
 import { initScanner, scanToken, Token, TokenType } from "./scanner.js"
 import { copyString, newFunction, ObjFun as ObjFun } from "./object.js";
+// #define DEBUG_TRACE_EXECUTION
 interface Parser {
   current: Token;
   previous: Token;
@@ -139,6 +140,7 @@ const emitJump = (instruction: number) => {
   return currentChunk().count - 2
 }
 const emitReturn = () => {
+  emitByte(OpCode.OP_NIL)
   emitByte(OpCode.OP_RETURN)
 }
 const makeConstant = (value: Value): number => {
@@ -547,6 +549,19 @@ const printStatement = () => {
   consume(TokenType.SEMICOLON, "Expect ';' after value.")
   emitByte(OpCode.OP_PRINT)
 }
+const returnStatement = () => {
+  if (current.type === FunType.SCRIPT) {
+    error("Can't return from top-level code.")
+  }
+  if (match(TokenType.SEMICOLON)) {
+    emitReturn()
+  }
+  else {
+    expression()
+    consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+    emitByte(OpCode.OP_RETURN)
+  }
+}
 const whileStatement = () => {
   const loopStart = currentChunk().count
   consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.")
@@ -600,6 +615,9 @@ const statement = () => {
   }
   else if (match(TokenType.IF)) {
     ifStatement()
+  }
+  else if (match(TokenType.RETURN)) {
+    returnStatement()
   }
   else if (match(TokenType.WHILE)) {
     whileStatement()
