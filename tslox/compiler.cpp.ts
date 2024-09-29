@@ -41,6 +41,11 @@ interface Local {
   depth: number;
 }
 
+interface Upvalue {
+  index: number;
+  isLocal: boolean;
+}
+
 enum FunType {
   FUN,
   SCRIPT,
@@ -53,6 +58,7 @@ interface Compiler {
 
   locals: Local[];
   localCount: number;
+  upvalues: Upvalue[];
   scopeDepth: number;
 }
 
@@ -76,11 +82,19 @@ const makeLocals = (): Local[] => {
   }))
 }
 
+const makeUpvalues = (): Upvalue[] => {
+  return Array.from({length: UINT8_COUNT}).map(() => ({
+    index: 0,
+    isLocal: false,
+  }))
+}
+
 let current: Compiler = {
   enclosing: null,
   fun: null,
   type: FunType.SCRIPT,
   localCount: 0,
+  upvalues: makeUpvalues(),
   scopeDepth: 0,
   locals: makeLocals(),
 }
@@ -209,6 +223,7 @@ const makeCompiler = (): Compiler => {
     fun: null,
     type: FunType.SCRIPT,
     localCount: 0,
+    upvalues: makeUpvalues(),
     scopeDepth: 0,
     locals: makeLocals(),
   }
@@ -344,6 +359,10 @@ const namedVariable = (name: Token, canAssign: boolean) => {
     getOp = OpCode.OP_GET_LOCAL
     setOp = OpCode.OP_SET_LOCAL
   }
+  else if ((arg = resolveUpvalue(current, name)) !== -1) {
+    getOp = OpCode.OP_GET_UPVALUE
+    setOp = OpCode.OP_SET_UPVALUE
+  }
   else {
     arg = identifierConstant(name)
     getOp = OpCode.OP_GET_GLOBAL
@@ -467,6 +486,42 @@ const resolveLocal = (compiler: Compiler, name: Token) => {
   return -1
 }
 
+const addUpvalue = (compiler: Compiler, index: number, isLocal: boolean): number => {
+  const upvalueCount = compiler.fun.upvalueCount
+
+  for (let i = 0; i < upvalueCount; ++i) {
+    const upvalue: Upvalue = compiler.upvalues[i]
+    if (upvalue.index === index && upvalue.isLocal === isLocal) {
+      return i
+    }
+  }
+
+  if (upvalueCount === UINT8_COUNT) {
+    error("Too many closure variables in function.")
+    return 0
+  }
+
+  compiler.upvalues[upvalueCount].isLocal = isLocal
+  compiler.upvalues[upvalueCount].index = index
+  return compiler.fun.upvalueCount++
+}
+
+const resolveUpvalue = (compiler: Compiler, name: Token): number => {
+  if (compiler.enclosing === null) return -1
+
+  const local = resolveLocal(compiler.enclosing, name)
+  if (local !== -1) {
+    return addUpvalue(compiler, local, true)
+  }
+
+  const upvalue = resolveUpvalue(compiler.enclosing, name)
+  if (upvalue !== -1) {
+    return addUpvalue(compiler, upvalue, false)
+  }
+
+  return -1
+}
+
 const addLocal = (name: Token) => {
   if (current.localCount === UINT8_COUNT) {
     error("Too many local variables in function.")
@@ -571,7 +626,12 @@ const fun = (type: FunType) => {
   block()
 
   const fun: ObjFun = endCompiler()
-  emitBytes(OpCode.OP_CONSTANT, makeConstant(OBJ_VAL(fun)))
+  emitBytes(OpCode.OP_CLOSURE, makeConstant(OBJ_VAL(fun)))
+
+  for (let i = 0; i < fun.upvalueCount; ++i) {
+    emitByte(compiler.upvalues[i].isLocal ? 1 : 0)
+    emitByte(compiler.upvalues[i].index)
+  }
 }
 
 const funDeclaration = () => {

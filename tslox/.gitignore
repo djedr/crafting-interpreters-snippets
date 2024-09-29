@@ -3,3 +3,4 @@ compiler.ts
 value.ts
 object.ts
 table.ts
+debug.cpp

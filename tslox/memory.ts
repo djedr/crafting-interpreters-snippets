@@ -4,6 +4,10 @@ import { vm } from "./vm.js"
 
 const freeObject = (object: Obj) => {
   switch (object.type) {
+    case ObjType.CLOSURE: {
+      // FREE(ObjClosure, object)
+      break
+    }
     case ObjType.FUN: {
       // const fun: ObjFun = object as ObjFun
       // freeChunk(fun.chunk)

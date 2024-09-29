@@ -1,16 +1,32 @@
 import { IS_OBJ, Obj, printObject, ObjString, isObjType } from "./object.js"
+
+
+
+
+
+
+
+
+
+
+
 export type Value = number | boolean | null | Obj
+
 export type ValueArray = Value[]
+
 export const makeValueArray = (): ValueArray => {
   return []
 }
+
 export const writeValueArray = (array: ValueArray, value: Value) => {
   // to be optimized if need be
   array.push(value)
 }
+
 export const freeValueArray = (array: ValueArray) => {
   throw Error('todo?')
 }
+
 export const printValue = (value: Value) => {
   if ((typeof (value) === 'boolean')) {
     process.stdout.write(((value) as boolean) ? "true" : "false")
@@ -29,6 +45,7 @@ export const printValue = (value: Value) => {
     throw Error('not implemented')
   }
 }
+
 export const valuesEqual = (a: Value, b: Value): boolean => {
   if (typeof a !== typeof b) return false
   if ((typeof (a) === 'boolean')) {

@@ -2,15 +2,7 @@ import { Chunk, OpCode } from "./chunk.js";
 import { ObjFun, Obj } from "./object.js";
 import { printValue } from "./value.js";
 
-
-
-
-
-
-
-
-
-
+#include "object.h"
 
 export const disassembleChunk = (chunk: Chunk, name: string) => {
   console.log(`== ${name} ==`)
@@ -99,7 +91,7 @@ export const disassembleInstruction = (chunk: Chunk, offset: number) => {
       printValue(chunk.constants[constant])
       console.log()
 
-      const fun: ObjFun = (((chunk.constants[constant]) as Obj) as ObjFun)
+      const fun: ObjFun = AS_FUN(chunk.constants[constant])
       for (let j = 0; j < fun.upvalueCount; ++j) {
         const isLocal = chunk.code[offset++]
         const index = chunk.code[offset++]

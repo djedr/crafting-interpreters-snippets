@@ -3,7 +3,7 @@ import { Value, valuesEqual } from "./value.js";
 import { compile } from "./compiler.js";
 import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
-import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ, NativeFn, copyString, newNative, ObjNative } from "./object.js";
+import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ, NativeFn, copyString, newNative, ObjNative, ObjClosure, newClosure } from "./object.js";
 import { freeObjects } from "./memory.js";
 import { Table, tableDelete, tableGet, tableSet } from "./table.js";
 import { freeTable, makeTable } from "./table.js";
@@ -16,7 +16,7 @@ const FRAMES_MAX = 64
 const STACK_MAX = FRAMES_MAX * UINT8_COUNT
 
 interface CallFrame {
-  fun: ObjFun;
+  closure: ObjClosure;
   ip: number;
   slotsIndex: number;
   // slots: Value[];
@@ -63,7 +63,7 @@ const runtimeError = (...args: string[]) => {
 
   for (let i = vm.frameCount - 1; i >= 0; --i) {
     const frame: CallFrame = vm.frames[i]
-    const fun: ObjFun = frame.fun
+    const fun: ObjFun = frame.closure.fun
     const instruction = frame.ip - 1
     process.stderr.write(`[line ${fun.chunk.lines[instruction]}] in `)
     if (fun.name === null) {
@@ -87,7 +87,7 @@ const defineNative = (name: string, fun: NativeFn) => {
 
 const makeFrames = (): CallFrame[] => {
   return Array.from({length: FRAMES_MAX}).map(() => ({
-    fun: null,
+    closure: null,
     ip: 0,
     slotsIndex: 0,
     // slots: [],
@@ -125,9 +125,9 @@ const peek = (distance: number): Value => {
   return vm.stack[vm.stackTop - 1 - distance]
 }
 
-const call = (fun: ObjFun, argCount: number): boolean => {
-  if (argCount !== fun.arity) {
-    runtimeError(`Expected ${fun.arity} arguments but got ${argCount}.`)
+const call = (closure: ObjClosure, argCount: number): boolean => {
+  if (argCount !== closure.fun.arity) {
+    runtimeError(`Expected ${closure.fun.arity} arguments but got ${argCount}.`)
     return false
   }
 
@@ -137,7 +137,7 @@ const call = (fun: ObjFun, argCount: number): boolean => {
   }
 
   const frame: CallFrame = vm.frames[vm.frameCount++]
-  frame.fun = fun
+  frame.closure = closure
   // todo: maybe frame should have it's own .code pointer
   frame.ip = 0
   // note: slots is supposed to b a window into stack
@@ -149,8 +149,8 @@ const call = (fun: ObjFun, argCount: number): boolean => {
 const callValue = (callee: Value, argCount: number): boolean => {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
-      case ObjType.FUN:
-        return call(AS_FUN(callee), argCount)
+      case ObjType.CLOSURE:
+        return call(AS_CLOSURE(callee), argCount)
       case ObjType.NATIVE: {
         const native: NativeFn = AS_NATIVE(callee)
         // todo: make sure this slice is ok
@@ -197,15 +197,15 @@ const concatenate = () => {
 const run = (): InterpretResult => {
   let frame: CallFrame = vm.frames[vm.frameCount - 1]
 
-#define READ_BYTE() (frame.fun.chunk.code[frame.ip++])
+#define READ_BYTE() (frame.closure.fun.chunk.code[frame.ip++])
 
 #define READ_SHORT() \
   (frame.ip += 2, \
-    ((frame.fun.chunk.code[frame.ip - 2] << 8) | \
-    frame.fun.chunk.code[frame.ip - 1]))
+    ((frame.closure.fun.chunk.code[frame.ip - 2] << 8) | \
+    frame.closure.fun.chunk.code[frame.ip - 1]))
 
 #define READ_CONSTANT() \
-    (frame.fun.chunk.constants[READ_BYTE()])
+    (frame.closure.fun.chunk.constants[READ_BYTE()])
 
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 
@@ -219,7 +219,7 @@ const run = (): InterpretResult => {
     }
     console.log()
     disassembleInstruction(
-      frame.fun.chunk,
+      frame.closure.fun.chunk,
       frame.ip,
     )
 #endif
@@ -279,9 +279,9 @@ const run = (): InterpretResult => {
       }
       case OpCode.OP_GREATER:  BINARY_OP(BOOL_VAL, >); break
       // to prevent vscode syntax highlighting from completely breaking:
-      #define LT <
+#define LT <
       case OpCode.OP_LESS:     BINARY_OP(BOOL_VAL, LT); break
-      #undef LT
+#undef LT
       case OpCode.OP_ADD: {
         if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
           concatenate()
@@ -340,6 +340,12 @@ const run = (): InterpretResult => {
         frame = vm.frames[vm.frameCount - 1]
         break
       }
+      case OpCode.OP_CLOSURE: {
+        const fun: ObjFun = AS_FUN(READ_CONSTANT())
+        const closure: ObjClosure = newClosure(fun)
+        push(OBJ_VAL(closure))
+        break
+      }
       case OpCode.OP_RETURN: {
         const result: Value = pop()
         vm.frameCount--
@@ -362,7 +368,10 @@ export const interpret = (source: string): InterpretResult => {
   if (fun === null) return InterpretResult.INTERPRET_COMPILE_ERROR
 
   push(OBJ_VAL(fun))
-  call(fun, 0)
+  const closure: ObjClosure = newClosure(fun)
+  pop()
+  push(OBJ_VAL(closure))
+  call(closure, 0)
 
   return run()
 }

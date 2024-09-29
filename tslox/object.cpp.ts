@@ -6,6 +6,7 @@ import { vm } from "./vm.js";
 #include "object.h"
 
 export enum ObjType {
+  CLOSURE,
   FUN,
   NATIVE,
   STRING,
@@ -19,6 +20,7 @@ export interface Obj {
 export interface ObjFun extends Obj {
   type: ObjType.FUN;
   arity: number;
+  upvalueCount: number;
   chunk: Chunk;
   name: ObjString;
 }
@@ -36,6 +38,11 @@ export interface ObjString extends Obj {
   hash: number;
 }
 
+export interface ObjClosure extends Obj {
+  type: ObjType.CLOSURE;
+  fun: ObjFun;
+}
+
 export const IS_OBJ = (value: any): value is Obj => {
   return value !== null && 
     typeof value === 'object' &&
@@ -51,12 +58,23 @@ const allocateObject = (type: ObjType): Obj => {
   return object
 }
 
+export const newClosure = (fun: ObjFun): ObjClosure => {
+  const closure: ObjClosure = {
+    ...allocateObject(ObjType.CLOSURE),
+    // to calm down typesctipt
+    type: ObjType.CLOSURE,
+    fun,
+  }
+  return closure
+}
+
 export const newFunction = (): ObjFun => {
   const fun: ObjFun = {
     ...allocateObject(ObjType.FUN),
     // to calm down typesctipt
     type: ObjType.FUN,
     arity: 0,
+    upvalueCount: 0,
     name: null,
     chunk: makeChunk(),
   }
@@ -131,6 +149,9 @@ const printFunction = (fun: ObjFun) => {
 
 export const printObject = (value: Obj) => {
   switch (OBJ_TYPE(value)) {
+    case ObjType.CLOSURE:
+      printFunction(AS_CLOSURE(value).fun)
+      break
     case ObjType.FUN:
       printFunction(AS_FUN(value))
       break
