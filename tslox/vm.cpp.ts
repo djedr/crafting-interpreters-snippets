@@ -3,7 +3,7 @@ import { Value, valuesEqual } from "./value.js";
 import { compile } from "./compiler.js";
 import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
-import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ, NativeFn, copyString, newNative, ObjNative, ObjClosure, newClosure } from "./object.js";
+import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ, NativeFn, copyString, newNative, ObjNative, ObjClosure, newClosure, ObjUpvalue, newUpvalue } from "./object.js";
 import { freeObjects } from "./memory.js";
 import { Table, tableDelete, tableGet, tableSet } from "./table.js";
 import { freeTable, makeTable } from "./table.js";
@@ -30,6 +30,7 @@ interface Vm {
   stackTop: number;
   globals: Table;
   strings: Table;
+  openUpvalues: ObjUpvalue;
   objects: Obj;
 }
 
@@ -47,6 +48,7 @@ export const vm: Vm = {
   globals: null,
   strings: null,
   objects: null,
+  openUpvalues: null,
 }
 
 const clockNative = (argCount: number, args: Value[]): Value => {
@@ -56,6 +58,7 @@ const clockNative = (argCount: number, args: Value[]): Value => {
 const resetStack = () => {
   vm.stackTop = 0
   vm.frameCount = 0
+  vm.openUpvalues = null
 }
 
 const runtimeError = (...args: string[]) => {
@@ -169,6 +172,43 @@ const callValue = (callee: Value, argCount: number): boolean => {
   return false
 }
 
+const captureUpvalue = (local: Value): ObjUpvalue => {
+  let prevUpvalue: ObjUpvalue = null
+  let upvalue: ObjUpvalue = vm.openUpvalues
+  while (upvalue !== null && upvalue.location > local) {
+    prevUpvalue = upvalue
+    upvalue = upvalue.next
+  }
+
+  if (upvalue !== null && upvalue.location === local) {
+    return upvalue
+  }
+
+  const createdUpvalue: ObjUpvalue = newUpvalue(local)
+  createdUpvalue.next = upvalue
+
+  if (prevUpvalue === null) {
+    vm.openUpvalues = createdUpvalue
+  }
+  else {
+    prevUpvalue.next = createdUpvalue
+  }
+
+  return createdUpvalue
+}
+
+const closeUpvalues = (last: Value) => {
+  while (
+    vm.openUpvalues !== null &&
+    vm.openUpvalues.location >= last
+  ) {
+    const upvalue: ObjUpvalue = vm.openUpvalues
+    upvalue.closed = upvalue.location
+    upvalue.location = upvalue.closed
+    vm.openUpvalues = upvalue.next
+  }
+}
+
 const isFalsey = (value: Value): boolean => {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value))
 }
@@ -271,6 +311,16 @@ const run = (): InterpretResult => {
         }
         break
       }
+      case OpCode.OP_GET_UPVALUE: {
+        const slot = READ_BYTE()
+        push(frame.closure.upvalues[slot].location)
+        break
+      }
+      case OpCode.OP_SET_UPVALUE: {
+        const slot = READ_BYTE()
+        frame.closure.upvalues[slot].location = peek(0)
+        break
+      }
       case OpCode.OP_EQUAL: {
         const b = pop()
         const a = pop()
@@ -344,10 +394,25 @@ const run = (): InterpretResult => {
         const fun: ObjFun = AS_FUN(READ_CONSTANT())
         const closure: ObjClosure = newClosure(fun)
         push(OBJ_VAL(closure))
+        for (let i = 0; i < closure.upvalueCount; ++i) {
+          const isLocal = READ_BYTE()
+          const index = READ_BYTE()
+          if (isLocal) {
+            closure.upvalues[i] = captureUpvalue(vm.stack[frame.slotsIndex + index])
+          }
+          else {
+            closure.upvalues[i] = frame.closure.upvalues[index]
+          }
+        }
         break
       }
+      case OpCode.OP_CLOSE_UPVALUE:
+        closeUpvalues(vm.stack[vm.stackTop - 1])
+        pop()
+        break
       case OpCode.OP_RETURN: {
         const result: Value = pop()
+        closeUpvalues(vm.stack[frame.slotsIndex])
         vm.frameCount--
         if (vm.frameCount === 0) {
           pop()

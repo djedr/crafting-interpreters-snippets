@@ -10,6 +10,7 @@ export enum ObjType {
   FUN,
   NATIVE,
   STRING,
+  UPVALUE,
 }
 
 export interface Obj {
@@ -38,9 +39,17 @@ export interface ObjString extends Obj {
   hash: number;
 }
 
+export interface ObjUpvalue extends Obj {
+  location: Value;
+  closed: Value;
+  next: ObjUpvalue;
+}
+
 export interface ObjClosure extends Obj {
   type: ObjType.CLOSURE;
   fun: ObjFun;
+  upvalues: ObjUpvalue[];
+  upvalueCount: number;
 }
 
 export const IS_OBJ = (value: any): value is Obj => {
@@ -58,12 +67,20 @@ const allocateObject = (type: ObjType): Obj => {
   return object
 }
 
+const makeUpvalueObjs = (length: number): ObjUpvalue[] => {
+  return Array.from({length}).map(() => null)
+}
+
 export const newClosure = (fun: ObjFun): ObjClosure => {
+  const upvalues = makeUpvalueObjs(fun.upvalueCount)
+
   const closure: ObjClosure = {
     ...allocateObject(ObjType.CLOSURE),
     // to calm down typesctipt
     type: ObjType.CLOSURE,
     fun,
+    upvalues,
+    upvalueCount: fun.upvalueCount,
   }
   return closure
 }
@@ -139,6 +156,17 @@ export const copyString = (
   return allocateString(chars, length, hash)
 }
 
+export const newUpvalue = (slot: Value): ObjUpvalue => {
+  const upvalue: ObjUpvalue = {
+    ...allocateObject(ObjType.UPVALUE),
+    type: ObjType.UPVALUE,
+    closed: NIL_VAL,
+    location: slot,
+    next: null,
+  }
+  return upvalue
+}
+
 const printFunction = (fun: ObjFun) => {
   if (fun.name === null) {
     process.stdout.write("<script>")
@@ -160,6 +188,9 @@ export const printObject = (value: Obj) => {
       break
     case ObjType.STRING:
       process.stdout.write(AS_TSSTRING(value))
+      break
+    case ObjType.UPVALUE:
+      process.stdout.write("upvalue")
       break
   }
 }

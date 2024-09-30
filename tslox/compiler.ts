@@ -45,6 +45,7 @@ interface ParseRule {
 interface Local {
   name: Token;
   depth: number;
+  isCaptured: boolean;
 }
 
 interface Upvalue {
@@ -84,7 +85,8 @@ const makeLocals = (): Local[] => {
       start: 0,
       length: 0,
       line: 0,
-    }
+    },
+    isCaptured: false,
   }))
 }
 
@@ -249,6 +251,7 @@ const initCompiler = (compiler: Compiler, type: FunType) => {
 
   const local: Local = current.locals[current.localCount++]
   local.depth = 0
+  local.isCaptured = false
   local.name.source = ""
   local.name.start = 0
   local.name.length = 0
@@ -277,7 +280,12 @@ const endScope = () => {
     current.localCount > 0 &&
     current.locals[current.localCount - 1].depth > current.scopeDepth
   ) {
-    emitByte(OpCode.OP_POP)
+    if (current.locals[current.localCount - 1].isCaptured) {
+      emitByte(OpCode.OP_CLOSE_UPVALUE)
+    }
+    else {
+      emitByte(OpCode.OP_POP)
+    }
     current.localCount -= 1
   }
 }
@@ -511,6 +519,7 @@ const resolveUpvalue = (compiler: Compiler, name: Token): number => {
 
   const local = resolveLocal(compiler.enclosing, name)
   if (local !== -1) {
+    compiler.enclosing.locals[local].isCaptured = true
     return addUpvalue(compiler, local, true)
   }
 
@@ -531,6 +540,7 @@ const addLocal = (name: Token) => {
   const local: Local = current.locals[current.localCount++]
   local.name = name
   local.depth = -1
+  local.isCaptured = false
 }
 
 const declareVariable = () => {
