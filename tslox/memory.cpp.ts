@@ -5,23 +5,13 @@ import { markTable } from "./table.js"
 import { printValue, Value } from "./value.js"
 import { vm } from "./vm.js"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#include "common.h"
+#include "object.h"
 
 const freeObject = (object: Obj) => {
+#ifdef DEBUG_LOG_GC
   console.log(`[todo] free type ${object.type}`)
+#endif
 
   switch (object.type) {
     case ObjType.CLOSURE: {
@@ -51,11 +41,15 @@ const freeObject = (object: Obj) => {
 }
 
 export const collectGarbage = () => {
+#ifdef DEBUG_LOG_GC
   console.log(`-- gc begin`)
+#endif
 
   markRoots()
 
+#ifdef DEBUG_LOG_GC
   console.log(`-- gc end`)
+#endif
 }
 
 const markRoots = () => {
@@ -88,7 +82,7 @@ export const freeObjects = () => {
 
 export const reallocate = (pointer: number, oldSize: number, newSize: number) => {
 //   if (newSize > oldSize) {
-// #ifdef 
+// #ifdef DEBUG_STRESS_GC
 //     collectGarbage()
 // #endif
 //   }
@@ -98,9 +92,11 @@ export const reallocate = (pointer: number, oldSize: number, newSize: number) =>
 
 export const markObject = (object: Obj) => {
   if (object === null) return
+#ifdef DEBUG_LOG_GC
   process.stdout.write(`[todo] mark `)
-  printValue((object))
+  printValue(OBJ_VAL(object))
   process.stdout.write('\n')
+#endif
 
   object.isMarked = true
 
@@ -115,5 +111,5 @@ export const markObject = (object: Obj) => {
 }
 
 export const markValue = (value: Value) => {
-  if (IS_OBJ(value)) markObject(((value) as Obj))
+  if (IS_OBJ(value)) markObject(AS_OBJ(value))
 }

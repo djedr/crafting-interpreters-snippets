@@ -1,3 +1,4 @@
+import { markObject, markValue } from "./memory.js";
 import { ObjString } from "./object.js";
 import { Value } from "./value.js";
 
@@ -140,5 +141,13 @@ export const tableFindString = (table: Table, chars: string, length: number, has
     }
 
     index = (index + 1) % table.capacity
+  }
+}
+
+export const markTable = (table: Table) => {
+  for (let i = 0; i < table.capacity; ++i) {
+    const entry: Entry = table.entries[i]
+    markObject(entry.key)
+    markValue(entry.value)
   }
 }

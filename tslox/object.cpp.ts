@@ -15,6 +15,7 @@ export enum ObjType {
 
 export interface Obj {
   type: ObjType;
+  isMarked: boolean;
   next: Obj;
 }
 
@@ -59,11 +60,17 @@ export const IS_OBJ = (value: any): value is Obj => {
 }
 
 const allocateObject = (type: ObjType): Obj => {
-  const object = {
+  const object: Obj = {
     type,
+    isMarked: false,
     next: vm.objects,
   }
   vm.objects = object
+
+#ifdef DEBUG_LOG_GC
+  console.log(`[todo] allocate [todo] for ${type}`)
+#endif
+
   return object
 }
 

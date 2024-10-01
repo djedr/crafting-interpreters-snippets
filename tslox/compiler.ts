@@ -3,6 +3,8 @@ import { Value } from "./value.js";
 import { disassembleChunk } from "./debug.js";
 import { initScanner, scanToken, Token, TokenType } from "./scanner.js"
 import { copyString, newFunction, ObjFun as ObjFun } from "./object.js";
+import { markObject } from "./memory.js";
+
 
 
 
@@ -851,4 +853,12 @@ export const compile = (source: string): ObjFun => {
 
   const fun: ObjFun = endCompiler()
   return parser.hadError ? null: fun
+}
+
+export const markCompilerRoots = () => {
+  let compiler: Compiler = current
+  while (compiler !== null) {
+    markObject(compiler.fun)
+    compiler = compiler.enclosing
+  }
 }

@@ -32,6 +32,10 @@ interface Vm {
   strings: Table;
   openUpvalues: ObjUpvalue;
   objects: Obj;
+
+  grayCount: number;
+  grayCapacity: number;
+  grayStack: Obj[];
 }
 
 enum InterpretResult {
@@ -49,6 +53,9 @@ export const vm: Vm = {
   strings: null,
   objects: null,
   openUpvalues: null,
+  grayCount: 0,
+  grayCapacity: 0,
+  grayStack: [],
 }
 
 const clockNative = (argCount: number, args: Value[]): Value => {
@@ -104,6 +111,10 @@ export const initVm = () => {
   vm.objects = null
   vm.globals = makeTable()
   vm.strings = makeTable()
+
+  vm.grayCount = 0
+  vm.grayCapacity = 0
+  vm.grayStack = []
 
   defineNative("clock", clockNative)
 }
