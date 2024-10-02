@@ -31,6 +31,9 @@ interface Vm {
   globals: Table;
   strings: Table;
   openUpvalues: ObjUpvalue;
+
+  bytesAllocated: number;
+  nextGc: number;
   objects: Obj;
 
   grayCount: number;
@@ -108,9 +111,11 @@ const makeFrames = (): CallFrame[] => {
 export const initVm = () => {
   resetStack()
   vm.frames = makeFrames()
-  vm.objects = null
   vm.globals = makeTable()
   vm.strings = makeTable()
+  vm.objects = null
+  vm.bytesAllocated = 0
+  vm.nextGc = 1024 * 1024
 
   vm.grayCount = 0
   vm.grayCapacity = 0

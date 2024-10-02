@@ -41,6 +41,7 @@ export interface ObjString extends Obj {
 }
 
 export interface ObjUpvalue extends Obj {
+  type: ObjType.UPVALUE;
   location: Value;
   closed: Value;
   next: ObjUpvalue;

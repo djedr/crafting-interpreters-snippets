@@ -144,6 +144,15 @@ export const tableFindString = (table: Table, chars: string, length: number, has
   }
 }
 
+export const tableRemoveWhite = (table: Table) => {
+  for (let i = 0; i < table.capacity; ++i) {
+    const entry = table.entries[i]
+    if (entry.key !== null && !entry.key.isMarked) {
+      tableDelete(table, entry.key)
+    }
+  }
+}
+
 export const markTable = (table: Table) => {
   for (let i = 0; i < table.capacity; ++i) {
     const entry: Entry = table.entries[i]

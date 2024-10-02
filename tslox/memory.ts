@@ -1,8 +1,8 @@
 import { freeChunk } from "./chunk.js"
 import { markCompilerRoots } from "./compiler.js"
-import { Obj, ObjClosure, ObjFun, ObjString, ObjType, IS_OBJ } from "./object.js"
-import { markTable } from "./table.js"
-import { printValue, Value } from "./value.js"
+import { Obj, ObjClosure, ObjFun, ObjString, ObjType, IS_OBJ, ObjUpvalue } from "./object.js"
+import { markTable, tableRemoveWhite } from "./table.js"
+import { printValue, Value, ValueArray } from "./value.js"
 import { vm } from "./vm.js"
 
 
@@ -54,6 +54,9 @@ export const collectGarbage = () => {
   console.log(`-- gc begin`)
 
   markRoots()
+  traceReferences()
+  tableRemoveWhite(vm.strings)
+  sweep()
 
   console.log(`-- gc end`)
 }
@@ -73,6 +76,38 @@ const markRoots = () => {
 
   markTable(vm.globals)
   markCompilerRoots()
+}
+
+const traceReferences = () => {
+  while (vm.grayCount > 0) {
+    const object = vm.grayStack[--vm.grayCount]
+    blackenObject(object)
+  }
+}
+
+const sweep = () => {
+  let previous: Obj = null
+  let object: Obj = vm.objects
+
+  while (object !== null) {
+    if (object.isMarked) {
+      object.isMarked = false
+      previous = object
+      object = object.next
+    }
+    else {
+      const unreached: Obj = object
+      object = object.next
+      if (previous !== null) {
+        previous.next = object
+      }
+      else {
+        vm.objects = object
+      }
+
+      freeObject(unreached)
+    }
+  }
 }
 
 export const freeObjects = () => {
@@ -98,6 +133,8 @@ export const reallocate = (pointer: number, oldSize: number, newSize: number) =>
 
 export const markObject = (object: Obj) => {
   if (object === null) return
+  if (object.isMarked) return
+
   process.stdout.write(`[todo] mark `)
   printValue((object))
   process.stdout.write('\n')
@@ -116,4 +153,37 @@ export const markObject = (object: Obj) => {
 
 export const markValue = (value: Value) => {
   if (IS_OBJ(value)) markObject(((value) as Obj))
+}
+
+const markArray = (array: ValueArray) => {
+  for (let i = 0; i < array.length; ++i) {
+    markValue(array[i])
+  }
+}
+
+const blackenObject = (object: Obj) => {
+  process.stdout.write(`[todo] blacken `)
+  printValue((object))
+  console.log()
+
+  switch (object.type) {
+    case ObjType.CLOSURE:
+      const closure: ObjClosure = object as ObjClosure
+      markObject(closure.fun)
+      for (let i = 0; i < closure.upvalueCount; ++i) {
+        markObject(closure.upvalues[i])
+      }
+      break
+    case ObjType.FUN:
+      const fun: ObjFun = object as ObjFun
+      markObject(fun.name)
+      markArray(fun.chunk.constants)
+      break
+    case ObjType.UPVALUE:
+      markValue((object as ObjUpvalue).closed)
+      break
+    case ObjType.NATIVE:
+    case ObjType.STRING:
+      break
+  }
 }
