@@ -55,6 +55,8 @@ export const vm: Vm = {
   globals: null,
   strings: null,
   objects: null,
+  bytesAllocated: 0,
+  nextGc: 1024 * 1024,
   openUpvalues: null,
   grayCount: 0,
   grayCapacity: 0,
@@ -230,12 +232,14 @@ const isFalsey = (value: Value): boolean => {
 }
 
 const concatenate = () => {
-  const b = AS_STRING(pop())
-  const a = AS_STRING(pop())
+  const b = AS_STRING(peek(0))
+  const a = AS_STRING(peek(1))
 
   const length = a.length + b.length
   const chars = a.chars + b.chars
   const result: ObjString = takeString(chars, length)
+  pop()
+  pop()
   push(OBJ_VAL(result))
 }
 

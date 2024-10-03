@@ -8,6 +8,8 @@ import { vm } from "./vm.js"
 #include "common.h"
 #include "object.h"
 
+#define GC_HEAP_GROW_FACTOR 2
+
 const freeObject = (object: Obj) => {
 #ifdef DEBUG_LOG_GC
   console.log(`[todo] free type ${object.type}`)
@@ -43,6 +45,7 @@ const freeObject = (object: Obj) => {
 export const collectGarbage = () => {
 #ifdef DEBUG_LOG_GC
   console.log(`-- gc begin`)
+  const before = vm.bytesAllocated
 #endif
 
   markRoots()
@@ -50,8 +53,11 @@ export const collectGarbage = () => {
   tableRemoveWhite(vm.strings)
   sweep()
 
+  vm.nextGc = vm.bytesAllocated * GC_HEAP_GROW_FACTOR
+
 #ifdef DEBUG_LOG_GC
   console.log(`-- gc end`)
+  console.log(`    collected ${before - vm.bytesAllocated} bytes (from ${before} to ${vm.bytesAllocated}) next at ${vm.nextGc}`)
 #endif
 }
 
@@ -116,11 +122,16 @@ export const freeObjects = () => {
 }
 
 export const reallocate = (pointer: number, oldSize: number, newSize: number) => {
+  vm.bytesAllocated += newSize - oldSize
 //   if (newSize > oldSize) {
 // #ifdef DEBUG_STRESS_GC
 //     collectGarbage()
 // #endif
 //   }
+
+  if (vm.bytesAllocated > vm.nextGc) {
+    collectGarbage()
+  }
 
   // ...
 }

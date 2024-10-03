@@ -1,7 +1,7 @@
 import { Chunk, makeChunk } from "./chunk.js";
 import { tableFindString, tableSet } from "./table.js";
 import { Value } from "./value.js";
-import { vm } from "./vm.js";
+import { pop, push, vm } from "./vm.js";
 
 #include "object.h"
 
@@ -125,7 +125,9 @@ const allocateString = (chars: string, length: number, hash: number): ObjString 
     chars,
     hash,
   }
+  push(OBJ_VAL(string))
   tableSet(vm.strings, string, NIL_VAL)
+  pop()
   return string
 }
 

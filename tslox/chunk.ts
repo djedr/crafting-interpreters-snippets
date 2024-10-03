@@ -1,5 +1,6 @@
 import { Value } from "./value.js";
 import { makeValueArray, ValueArray, writeValueArray } from "./value.js";
+import { pop, push } from "./vm.js";
 
 interface ArrayBufferConstructor {
   new (byteLength: number, opt: {maxByteLength: number}): ArrayBuffer;
@@ -73,7 +74,9 @@ export const writeChunk = (chunk: Chunk, byte: number, line: number) => {
 }
 
 export const addConstant = (chunk: Chunk, value: Value): number => {
+  push(value)
   writeValueArray(chunk.constants, value)
+  pop()
   return chunk.constants.length - 1
 }
 

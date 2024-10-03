@@ -20,6 +20,7 @@ import { vm } from "./vm.js"
 
 
 
+
 const freeObject = (object: Obj) => {
   console.log(`[todo] free type ${object.type}`)
 
@@ -52,13 +53,17 @@ const freeObject = (object: Obj) => {
 
 export const collectGarbage = () => {
   console.log(`-- gc begin`)
+  const before = vm.bytesAllocated
 
   markRoots()
   traceReferences()
   tableRemoveWhite(vm.strings)
   sweep()
 
+  vm.nextGc = vm.bytesAllocated * 2
+
   console.log(`-- gc end`)
+  console.log(`    collected ${before - vm.bytesAllocated} bytes (from ${before} to ${vm.bytesAllocated}) next at ${vm.nextGc}`)
 }
 
 const markRoots = () => {
@@ -122,11 +127,16 @@ export const freeObjects = () => {
 }
 
 export const reallocate = (pointer: number, oldSize: number, newSize: number) => {
+  vm.bytesAllocated += newSize - oldSize
 //   if (newSize > oldSize) {
 // #ifdef 
 //     collectGarbage()
 // #endif
 //   }
+
+  if (vm.bytesAllocated > vm.nextGc) {
+    collectGarbage()
+  }
 
   // ...
 }
