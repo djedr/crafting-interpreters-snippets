@@ -6,6 +6,7 @@ import { pop, push, vm } from "./vm.js";
 #include "object.h"
 
 export enum ObjType {
+  CLASS,
   CLOSURE,
   FUN,
   NATIVE,
@@ -54,6 +55,11 @@ export interface ObjClosure extends Obj {
   upvalueCount: number;
 }
 
+export interface ObjClass extends Obj {
+  type: ObjType.CLASS;
+  name: ObjString;
+}
+
 export const IS_OBJ = (value: any): value is Obj => {
   return value !== null && 
     typeof value === 'object' &&
@@ -73,6 +79,16 @@ const allocateObject = (type: ObjType): Obj => {
 #endif
 
   return object
+}
+
+export const newClass = (name: ObjString): ObjClass => {
+  const klass: ObjClass = {
+    ...allocateObject(ObjType.CLASS),
+    // to calm down typesctipt
+    type: ObjType.CLASS,
+    name,
+  }
+  return klass
 }
 
 const makeUpvalueObjs = (length: number): ObjUpvalue[] => {
@@ -187,6 +203,9 @@ const printFunction = (fun: ObjFun) => {
 
 export const printObject = (value: Obj) => {
   switch (OBJ_TYPE(value)) {
+    case ObjType.CLASS:
+      process.stdout.write(`${AS_CLASS(value).name.chars}`)
+      break
     case ObjType.CLOSURE:
       printFunction(AS_CLOSURE(value).fun)
       break

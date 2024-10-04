@@ -1,6 +1,6 @@
 import { freeChunk } from "./chunk.js"
 import { markCompilerRoots } from "./compiler.js"
-import { Obj, ObjClosure, ObjFun, ObjString, ObjType, IS_OBJ, ObjUpvalue } from "./object.js"
+import { Obj, ObjClosure, ObjFun, ObjString, ObjType, IS_OBJ, ObjUpvalue, ObjClass } from "./object.js"
 import { markTable, tableRemoveWhite } from "./table.js"
 import { printValue, Value, ValueArray } from "./value.js"
 import { vm } from "./vm.js"
@@ -25,6 +25,10 @@ const freeObject = (object: Obj) => {
   console.log(`[todo] free type ${object.type}`)
 
   switch (object.type) {
+    case ObjType.CLASS: {
+      // FREE(ObjClass, object)
+      break
+    }
     case ObjType.CLOSURE: {
       // const closure: ObjClosure = object
       // FREE_ARRAY(ObjUpvalue, closure.upvalues, closure.upvalueCount)
@@ -177,6 +181,11 @@ const blackenObject = (object: Obj) => {
   console.log()
 
   switch (object.type) {
+    case ObjType.CLASS: {
+      const klass: ObjClass = object as ObjClass
+      markObject(klass.name)
+      break
+    }
     case ObjType.CLOSURE:
       const closure: ObjClosure = object as ObjClosure
       markObject(closure.fun)
