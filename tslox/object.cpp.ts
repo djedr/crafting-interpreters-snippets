@@ -1,5 +1,5 @@
 import { Chunk, makeChunk } from "./chunk.js";
-import { tableFindString, tableSet } from "./table.js";
+import { makeTable, Table, tableFindString, tableSet } from "./table.js";
 import { Value } from "./value.js";
 import { pop, push, vm } from "./vm.js";
 
@@ -9,6 +9,7 @@ export enum ObjType {
   CLASS,
   CLOSURE,
   FUN,
+  INSTANCE,
   NATIVE,
   STRING,
   UPVALUE,
@@ -58,6 +59,12 @@ export interface ObjClosure extends Obj {
 export interface ObjClass extends Obj {
   type: ObjType.CLASS;
   name: ObjString;
+}
+
+export interface ObjInstance extends Obj {
+  type: ObjType.INSTANCE;
+  klass: ObjClass;
+  fields: Table;
 }
 
 export const IS_OBJ = (value: any): value is Obj => {
@@ -120,6 +127,16 @@ export const newFunction = (): ObjFun => {
     chunk: makeChunk(),
   }
   return fun
+}
+
+export const newInstance = (klass: ObjClass): ObjInstance => {
+  const instance: ObjInstance = {
+    ...allocateObject(ObjType.INSTANCE),
+    type: ObjType.INSTANCE,
+    klass,
+    fields: makeTable(),
+  }
+  return instance
 }
 
 export const newNative = (fun: NativeFn): ObjNative => {
@@ -211,6 +228,9 @@ export const printObject = (value: Obj) => {
       break
     case ObjType.FUN:
       printFunction(AS_FUN(value))
+      break
+    case ObjType.INSTANCE:
+      process.stdout.write(`${AS_INSTANCE(value).klass.name.chars} instance`)
       break
     case ObjType.NATIVE:
       process.stdout.write(`<native fn>`)

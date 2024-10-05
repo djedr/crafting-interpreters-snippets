@@ -3,7 +3,7 @@ import { Value, valuesEqual } from "./value.js";
 import { compile } from "./compiler.js";
 import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
-import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ, NativeFn, copyString, newNative, ObjNative, ObjClosure, newClosure, ObjUpvalue, newUpvalue } from "./object.js";
+import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ, NativeFn, copyString, newNative, ObjNative, ObjClosure, newClosure, ObjUpvalue, newUpvalue, newClass, ObjClass, newInstance, ObjInstance } from "./object.js";
 import { freeObjects } from "./memory.js";
 import { Table, tableDelete, tableGet, tableSet } from "./table.js";
 import { freeTable, makeTable } from "./table.js";
@@ -170,6 +170,11 @@ const call = (closure: ObjClosure, argCount: number): boolean => {
 const callValue = (callee: Value, argCount: number): boolean => {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
+      case ObjType.CLASS: {
+        const klass: ObjClass = AS_CLASS(callee)
+        vm.stack[vm.stackTop - argCount - 1] = OBJ_VAL(newInstance(klass))
+        return true
+      }
       case ObjType.CLOSURE:
         return call(AS_CLOSURE(callee), argCount)
       case ObjType.NATIVE: {
@@ -341,6 +346,37 @@ const run = (): InterpretResult => {
         frame.closure.upvalues[slot].location = peek(0)
         break
       }
+      case OpCode.OP_GET_PROPERTY: {
+        if (!IS_INSTANCE(peek(0))) {
+          runtimeError(`Only instances can have properties.`)
+          return InterpretResult.INTERPRET_RUNTIME_ERROR
+        }
+
+        const instance: ObjInstance = AS_INSTANCE(peek(0))
+        const name: ObjString = READ_STRING()
+
+        let value: Value
+        if ((value = tableGet(instance.fields, name)) !== undefined) {
+          pop() // Instance.
+          push(value)
+          break
+        }
+
+        runtimeError(`Undefined property '${name.chars}'.`)
+        return InterpretResult.INTERPRET_RUNTIME_ERROR
+      }
+      case OpCode.OP_SET_PROPERTY: {
+        if (!IS_INSTANCE(peek(1))) {
+          runtimeError(`Only instances can have fields.`)
+          return InterpretResult.INTERPRET_RUNTIME_ERROR
+        }
+        const instance: ObjInstance = AS_INSTANCE(peek(1))
+        tableSet(instance.fields, READ_STRING(), peek(0))
+        const value: Value = pop()
+        pop()
+        push(value)
+        break
+      }
       case OpCode.OP_EQUAL: {
         const b = pop()
         const a = pop()
@@ -444,6 +480,9 @@ const run = (): InterpretResult => {
         frame = vm.frames[vm.frameCount - 1]
         break
       }
+      case OpCode.OP_CLASS:
+        push(OBJ_VAL(newClass(READ_STRING())))
+        break
     }
   }
 }

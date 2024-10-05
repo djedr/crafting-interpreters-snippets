@@ -1,7 +1,7 @@
 import { freeChunk } from "./chunk.js"
 import { markCompilerRoots } from "./compiler.js"
-import { Obj, ObjClosure, ObjFun, ObjString, ObjType, IS_OBJ, ObjUpvalue, ObjClass } from "./object.js"
-import { markTable, tableRemoveWhite } from "./table.js"
+import { Obj, ObjClosure, ObjFun, ObjString, ObjType, IS_OBJ, ObjUpvalue, ObjClass, ObjInstance } from "./object.js"
+import { freeTable, markTable, tableRemoveWhite } from "./table.js"
 import { printValue, Value, ValueArray } from "./value.js"
 import { vm } from "./vm.js"
 
@@ -30,6 +30,12 @@ const freeObject = (object: Obj) => {
       // const fun: ObjFun = object as ObjFun
       // freeChunk(fun.chunk)
       // FREE(ObjFun, object)
+      break
+    }
+    case ObjType.INSTANCE: {
+      // const instance: ObjInstance = object as ObjInstance
+      // freeTable(instance.fields)
+      // FREE(ObjInstance, object)
       break
     }
     case ObjType.NATIVE:
@@ -185,18 +191,26 @@ const blackenObject = (object: Obj) => {
       markObject(klass.name)
       break
     }
-    case ObjType.CLOSURE:
+    case ObjType.CLOSURE: {
       const closure: ObjClosure = object as ObjClosure
       markObject(closure.fun)
       for (let i = 0; i < closure.upvalueCount; ++i) {
         markObject(closure.upvalues[i])
       }
       break
-    case ObjType.FUN:
+    }
+    case ObjType.FUN: {
       const fun: ObjFun = object as ObjFun
       markObject(fun.name)
       markArray(fun.chunk.constants)
       break
+    }
+    case ObjType.INSTANCE: {
+      const instance: ObjInstance = object as ObjInstance
+      markObject(instance.klass)
+      markTable(instance.fields)
+      break
+    }
     case ObjType.UPVALUE:
       markValue((object as ObjUpvalue).closed)
       break

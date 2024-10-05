@@ -327,6 +327,19 @@ const call = (canAssign: boolean) => {
   emitBytes(OpCode.OP_CALL, argCount)
 }
 
+const dot = (canAssign: boolean) => {
+  consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
+  const name = identifierConstant(parser.previous)
+
+  if (canAssign && match(TokenType.EQUAL)) {
+    expression()
+    emitBytes(OpCode.OP_SET_PROPERTY, name)
+  }
+  else {
+    emitBytes(OpCode.OP_GET_PROPERTY, name)
+  }
+}
+
 const literal = (canAssign: boolean) => {
   switch (parser.previous.type) {
     case TokenType.FALSE: emitByte(OpCode.OP_FALSE); break
@@ -414,7 +427,7 @@ rules[TokenType.RIGHT_PAREN]   = R(null,     null, Precedence.NONE)
 rules[TokenType.LEFT_BRACE]    = R(null,     null, Precedence.NONE)
 rules[TokenType.RIGHT_BRACE]   = R(null,     null, Precedence.NONE)
 rules[TokenType.COMMA]         = R(null,     null, Precedence.NONE)
-rules[TokenType.DOT]           = R(null,     null, Precedence.NONE)
+rules[TokenType.DOT]           = R(null,      dot, Precedence.CALL)
 rules[TokenType.MINUS]         = R(unary,  binary, Precedence.TERM)
 rules[TokenType.PLUS]          = R(null,   binary, Precedence.TERM)
 rules[TokenType.SEMICOLON]     = R(null,     null, Precedence.NONE)
@@ -646,6 +659,18 @@ const fun = (type: FunType) => {
   }
 }
 
+const classDeclaration = () => {
+  consume(TokenType.IDENTIFIER, "Expect class name.")
+  const nameConstant = identifierConstant(parser.previous)
+  declareVariable()
+
+  emitBytes(OpCode.OP_CLASS, nameConstant)
+  defineVariable(nameConstant)
+
+  consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+  consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+}
+
 const funDeclaration = () => {
   const global = parseVariable("Expect function name.")
   markInitialized()
@@ -799,7 +824,10 @@ const synchronize = () => {
 }
 
 const declaration = () => {
-  if (match(TokenType.FUN)) {
+  if (match(TokenType.CLASS)) {
+    classDeclaration()
+  }
+  else if (match(TokenType.FUN)) {
     funDeclaration()
   }
   else if (match(TokenType.VAR)) {
