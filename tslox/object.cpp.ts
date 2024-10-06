@@ -59,6 +59,7 @@ export interface ObjClosure extends Obj {
 export interface ObjClass extends Obj {
   type: ObjType.CLASS;
   name: ObjString;
+  methods: Table;
 }
 
 export interface ObjInstance extends Obj {
@@ -94,6 +95,7 @@ export const newClass = (name: ObjString): ObjClass => {
     // to calm down typesctipt
     type: ObjType.CLASS,
     name,
+    methods: makeTable(),
   }
   return klass
 }

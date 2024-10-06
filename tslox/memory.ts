@@ -26,6 +26,8 @@ const freeObject = (object: Obj) => {
 
   switch (object.type) {
     case ObjType.CLASS: {
+      // const klass: ObjClass = object as ObjClass
+      // freeTable(klass.methods)
       // FREE(ObjClass, object)
       break
     }
@@ -190,6 +192,7 @@ const blackenObject = (object: Obj) => {
     case ObjType.CLASS: {
       const klass: ObjClass = object as ObjClass
       markObject(klass.name)
+      markTable(klass.methods)
       break
     }
     case ObjType.CLOSURE: {
