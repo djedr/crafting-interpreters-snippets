@@ -44,6 +44,7 @@ export enum OpCode {
   OP_CLOSE_UPVALUE,
   OP_RETURN,
   OP_CLASS,
+  OP_METHOD,
 }
 
 export interface Chunk {

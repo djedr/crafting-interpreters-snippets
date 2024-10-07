@@ -232,6 +232,13 @@ const closeUpvalues = (last: Value) => {
   }
 }
 
+const defineMethod = (name: ObjString) => {
+  const method: Value = peek(0)
+  const klass: ObjClass = AS_CLASS(peek(1))
+  tableSet(klass.methods, name, method)
+  pop()
+}
+
 const isFalsey = (value: Value): boolean => {
   return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value))
 }
@@ -482,6 +489,9 @@ const run = (): InterpretResult => {
       }
       case OpCode.OP_CLASS:
         push(OBJ_VAL(newClass(READ_STRING())))
+        break
+      case OpCode.OP_METHOD:
+        defineMethod(READ_STRING())
         break
     }
   }

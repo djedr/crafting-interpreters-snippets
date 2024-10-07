@@ -659,16 +659,31 @@ const fun = (type: FunType) => {
   }
 }
 
+const method = () => {
+  consume(TokenType.IDENTIFIER, "Expect method name.")
+  const constant = identifierConstant(parser.previous)
+
+  const type: FunType = FunType.FUN
+  fun(type)
+  emitBytes(OpCode.OP_METHOD, constant)
+}
+
 const classDeclaration = () => {
   consume(TokenType.IDENTIFIER, "Expect class name.")
+  const className: Token = parser.previous
   const nameConstant = identifierConstant(parser.previous)
   declareVariable()
 
   emitBytes(OpCode.OP_CLASS, nameConstant)
   defineVariable(nameConstant)
 
+  namedVariable(className, false)
   consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+  while (!check(TokenType.RIGHT_BRACE) && !check(TokenType.EOF)) {
+    method()
+  }
   consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+  emitByte(OpCode.OP_POP)
 }
 
 const funDeclaration = () => {
