@@ -25,6 +25,10 @@ const freeObject = (object: Obj) => {
   console.log(`[todo] free type ${object.type}`)
 
   switch (object.type) {
+    case ObjType.BOUND_METHOD: {
+      // FREE(ObjBoundMethod, object)
+      break
+    }
     case ObjType.CLASS: {
       // const klass: ObjClass = object as ObjClass
       // freeTable(klass.methods)

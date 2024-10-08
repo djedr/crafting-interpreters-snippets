@@ -6,6 +6,7 @@ import { pop, push, vm } from "./vm.js";
 #include "object.h"
 
 export enum ObjType {
+  BOUND_METHOD,
   CLASS,
   CLOSURE,
   FUN,
@@ -68,6 +69,12 @@ export interface ObjInstance extends Obj {
   fields: Table;
 }
 
+export interface ObjBoundMethod extends Obj {
+  type: ObjType.BOUND_METHOD;
+  receiver: Value;
+  method: ObjClosure;
+}
+
 export const IS_OBJ = (value: any): value is Obj => {
   return value !== null && 
     typeof value === 'object' &&
@@ -87,6 +94,20 @@ const allocateObject = (type: ObjType): Obj => {
 #endif
 
   return object
+}
+
+export const newBoundMethod = (
+  receiver: Value,
+  method: ObjClosure,
+): ObjBoundMethod => {
+  const bound: ObjBoundMethod = {
+    ...allocateObject(ObjType.BOUND_METHOD),
+    // to calm down typesctipt
+    type: ObjType.BOUND_METHOD,
+    receiver,
+    method,
+  }
+  return bound
 }
 
 export const newClass = (name: ObjString): ObjClass => {
@@ -222,6 +243,9 @@ const printFunction = (fun: ObjFun) => {
 
 export const printObject = (value: Obj) => {
   switch (OBJ_TYPE(value)) {
+    case ObjType.BOUND_METHOD:
+      printFunction(AS_BOUND_METHOD(value).method.fun)
+      break
     case ObjType.CLASS:
       process.stdout.write(`${AS_CLASS(value).name.chars}`)
       break
