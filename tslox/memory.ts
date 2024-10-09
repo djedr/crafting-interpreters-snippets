@@ -1,6 +1,6 @@
 import { freeChunk } from "./chunk.js"
 import { markCompilerRoots } from "./compiler.js"
-import { Obj, ObjClosure, ObjFun, ObjString, ObjType, IS_OBJ, ObjUpvalue, ObjClass, ObjInstance } from "./object.js"
+import { Obj, ObjClosure, ObjFun, ObjString, ObjType, IS_OBJ, ObjUpvalue, ObjClass, ObjInstance, ObjBoundMethod } from "./object.js"
 import { freeTable, markTable, tableRemoveWhite } from "./table.js"
 import { printValue, Value, ValueArray } from "./value.js"
 import { vm } from "./vm.js"
@@ -193,6 +193,12 @@ const blackenObject = (object: Obj) => {
   console.log()
 
   switch (object.type) {
+    case ObjType.BOUND_METHOD: {
+      const bound: ObjBoundMethod = object as ObjBoundMethod
+      markValue(bound.receiver)
+      markObject(bound.method)
+      break
+    }
     case ObjType.CLASS: {
       const klass: ObjClass = object as ObjClass
       markObject(klass.name)

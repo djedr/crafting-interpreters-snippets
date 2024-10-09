@@ -3,7 +3,7 @@ import { Value, valuesEqual } from "./value.js";
 import { compile } from "./compiler.js";
 import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
-import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ, NativeFn, copyString, newNative, ObjNative, ObjClosure, newClosure, ObjUpvalue, newUpvalue, newClass, ObjClass, newInstance, ObjInstance } from "./object.js";
+import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ, NativeFn, copyString, newNative, ObjNative, ObjClosure, newClosure, ObjUpvalue, newUpvalue, newClass, ObjClass, newInstance, ObjInstance, ObjBoundMethod, newBoundMethod } from "./object.js";
 import { freeObjects } from "./memory.js";
 import { Table, tableDelete, tableGet, tableSet } from "./table.js";
 import { freeTable, makeTable } from "./table.js";
@@ -170,6 +170,11 @@ const call = (closure: ObjClosure, argCount: number): boolean => {
 const callValue = (callee: Value, argCount: number): boolean => {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
+      case ObjType.BOUND_METHOD: {
+        const bound: ObjBoundMethod = AS_BOUND_METHOD(callee)
+        vm.stack[vm.stackTop - argCount - 1] = bound.receiver
+        return call(bound.method, argCount)
+      }
       case ObjType.CLASS: {
         const klass: ObjClass = AS_CLASS(callee)
         vm.stack[vm.stackTop - argCount - 1] = OBJ_VAL(newInstance(klass))
@@ -193,6 +198,20 @@ const callValue = (callee: Value, argCount: number): boolean => {
   }
   runtimeError("Can only call functions and classes.")
   return false
+}
+
+const bindMethod = (klass: ObjClass, name: ObjString): boolean => {
+  let method: Value
+  if ((method = tableGet(klass.methods, name)) === undefined) {
+    runtimeError(`Undefined property ${name.chars}`)
+    return false
+  }
+
+  const bound: ObjBoundMethod = newBoundMethod(peek(0), AS_CLOSURE(method))
+
+  pop()
+  push(OBJ_VAL(bound))
+  return true
 }
 
 const captureUpvalue = (local: Value): ObjUpvalue => {
@@ -369,8 +388,10 @@ const run = (): InterpretResult => {
           break
         }
 
-        runtimeError(`Undefined property '${name.chars}'.`)
-        return InterpretResult.INTERPRET_RUNTIME_ERROR
+        if (!bindMethod(instance.klass, name)) {
+          return InterpretResult.INTERPRET_RUNTIME_ERROR
+        }
+        break
       }
       case OpCode.OP_SET_PROPERTY: {
         if (!IS_INSTANCE(peek(1))) {

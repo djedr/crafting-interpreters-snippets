@@ -50,6 +50,7 @@ interface Upvalue {
 
 enum FunType {
   FUN,
+  METHOD,
   SCRIPT,
 }
 
@@ -62,6 +63,10 @@ interface Compiler {
   localCount: number;
   upvalues: Upvalue[];
   scopeDepth: number;
+}
+
+interface ClassCompiler {
+  enclosing: ClassCompiler;
 }
 
 const parser: Parser = {
@@ -101,6 +106,8 @@ let current: Compiler = {
   scopeDepth: 0,
   locals: makeLocals(),
 }
+
+let currentClass: ClassCompiler = null
 
 const currentChunk = (): Chunk => {
   return current.fun.chunk
@@ -247,9 +254,15 @@ const initCompiler = (compiler: Compiler, type: FunType) => {
   const local: Local = current.locals[current.localCount++]
   local.depth = 0
   local.isCaptured = false
-  local.name.source = ""
   local.name.start = 0
-  local.name.length = 0
+  if (type !== FunType.FUN) {
+    local.name.source = "this"
+    local.name.length = 4
+  }
+  else {
+    local.name.source = ""
+    local.name.length = 0
+  }
 }
 
 const endCompiler = (): ObjFun => {
@@ -404,6 +417,15 @@ const variable = (canAssign: boolean) => {
   namedVariable(parser.previous, canAssign)
 }
 
+const this_ = (canAssign: boolean) => {
+  if (currentClass === null) {
+    error("Can't use 'this' outside of a class.")
+    return
+  }
+
+  variable(false)
+}
+
 const unary = (canAssign: boolean) => {
   const operatorType = parser.previous.type
 
@@ -455,7 +477,7 @@ rules[TokenType.OR]            = R(null,      or_, Precedence.OR)
 rules[TokenType.PRINT]         = R(null,     null, Precedence.NONE)
 rules[TokenType.RETURN]        = R(null,     null, Precedence.NONE)
 rules[TokenType.SUPER]         = R(null,     null, Precedence.NONE)
-rules[TokenType.THIS]          = R(null,     null, Precedence.NONE)
+rules[TokenType.THIS]          = R(this_,    null, Precedence.NONE)
 rules[TokenType.TRUE]          = R(literal,  null, Precedence.NONE)
 rules[TokenType.VAR]           = R(null,     null, Precedence.NONE)
 rules[TokenType.WHILE]         = R(null,     null, Precedence.NONE)
@@ -662,7 +684,7 @@ const method = () => {
   consume(TokenType.IDENTIFIER, "Expect method name.")
   const constant = identifierConstant(parser.previous)
 
-  const type: FunType = FunType.FUN
+  const type: FunType = FunType.METHOD
   fun(type)
   emitBytes(OpCode.OP_METHOD, constant)
 }
@@ -676,6 +698,11 @@ const classDeclaration = () => {
   emitBytes(OpCode.OP_CLASS, nameConstant)
   defineVariable(nameConstant)
 
+  const classCompiler: ClassCompiler = {
+    enclosing: currentClass
+  }
+  currentClass = classCompiler
+
   namedVariable(className, false)
   consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
   while (!check(TokenType.RIGHT_BRACE) && !check(TokenType.EOF)) {
@@ -683,6 +710,8 @@ const classDeclaration = () => {
   }
   consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
   emitByte(OpCode.OP_POP)
+
+  currentClass = currentClass.enclosing
 }
 
 const funDeclaration = () => {
