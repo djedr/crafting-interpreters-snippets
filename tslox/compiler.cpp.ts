@@ -50,6 +50,7 @@ interface Upvalue {
 
 enum FunType {
   FUN,
+  INITIALIZER,
   METHOD,
   SCRIPT,
 }
@@ -197,7 +198,13 @@ const emitJump = (instruction: number) => {
 }
 
 const emitReturn = () => {
-  emitByte(OpCode.OP_NIL)
+  if (current.type === FunType.INITIALIZER) {
+    emitBytes(OpCode.OP_GET_LOCAL, 0)
+  }
+  else {
+    emitByte(OpCode.OP_NIL)
+  }
+
   emitByte(OpCode.OP_RETURN)
 }
 
@@ -684,7 +691,11 @@ const method = () => {
   consume(TokenType.IDENTIFIER, "Expect method name.")
   const constant = identifierConstant(parser.previous)
 
-  const type: FunType = FunType.METHOD
+  let type: FunType = FunType.METHOD
+  if (parser.previous.length === 4 && parser.previous.source.startsWith("init", parser.previous.start)) {
+    type = FunType.INITIALIZER
+  }
+
   fun(type)
   emitBytes(OpCode.OP_METHOD, constant)
 }
@@ -821,6 +832,10 @@ const returnStatement = () => {
     emitReturn()
   }
   else {
+    if (current.type === FunType.INITIALIZER) {
+      error(`Can't return a value from an initializer.`)
+    }
+
     expression()
     consume(TokenType.SEMICOLON, "Expect ';' after return value.")
     emitByte(OpCode.OP_RETURN)

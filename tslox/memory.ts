@@ -97,6 +97,7 @@ const markRoots = () => {
 
   markTable(vm.globals)
   markCompilerRoots()
+  markObject(vm.initString)
 }
 
 const traceReferences = () => {

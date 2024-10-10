@@ -30,6 +30,7 @@ interface Vm {
   stackTop: number;
   globals: Table;
   strings: Table;
+  initString: ObjString;
   openUpvalues: ObjUpvalue;
 
   bytesAllocated: number;
@@ -54,6 +55,7 @@ export const vm: Vm = {
   stackTop: 0,
   globals: null,
   strings: null,
+  initString: null,
   objects: null,
   bytesAllocated: 0,
   nextGc: 1024 * 1024,
@@ -115,6 +117,10 @@ export const initVm = () => {
   vm.frames = makeFrames()
   vm.globals = makeTable()
   vm.strings = makeTable()
+
+  vm.initString = null
+  vm.initString = copyString("init", 0, 4)
+
   vm.objects = null
   vm.bytesAllocated = 0
   vm.nextGc = 1024 * 1024
@@ -129,6 +135,7 @@ export const initVm = () => {
 export const freeVm = () => {
   freeTable(vm.globals)
   freeTable(vm.strings)
+  vm.initString = null
   freeObjects()
 }
 
@@ -178,6 +185,14 @@ const callValue = (callee: Value, argCount: number): boolean => {
       case ObjType.CLASS: {
         const klass: ObjClass = AS_CLASS(callee)
         vm.stack[vm.stackTop - argCount - 1] = OBJ_VAL(newInstance(klass))
+        let initializer: Value
+        if ((initializer = tableGet(klass.methods, vm.initString)) !== undefined) {
+          return call(AS_CLOSURE(initializer), argCount)
+        }
+        else if (argCount !== 0) {
+          runtimeError(`Expected 0 arguments but got ${argCount}`)
+          return false
+        }
         return true
       }
       case ObjType.CLOSURE:
