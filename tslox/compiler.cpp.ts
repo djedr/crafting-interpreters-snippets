@@ -350,6 +350,11 @@ const dot = (canAssign: boolean) => {
     expression()
     emitBytes(OpCode.OP_SET_PROPERTY, name)
   }
+  else if (match(TokenType.LEFT_PAREN)) {
+    const argCount = argumentList()
+    emitBytes(OpCode.OP_INVOKE, name)
+    emitByte(argCount)
+  }
   else {
     emitBytes(OpCode.OP_GET_PROPERTY, name)
   }

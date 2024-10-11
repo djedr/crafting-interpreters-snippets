@@ -28,6 +28,15 @@ const constantInstruction = (name: string, chunk: Chunk, offset: number): number
   return offset + 2
 }
 
+const invokeInstruction = (name: string, chunk: Chunk, offset: number): number => {
+  const constant = chunk.code[offset + 1]
+  const argCount = chunk.code[offset + 2]
+  process.stdout.write(`${name.padEnd(16)} (${argCount} args) ${constant.toString().padStart(4)} '`)
+  printValue(chunk.constants[constant])
+  console.log("'")
+  return offset + 3
+}
+
 export const disassembleInstruction = (chunk: Chunk, offset: number) => {
   process.stdout.write(offset.toString().padStart(4, '0') + ' ')
   if (offset > 0 && chunk.lines[offset] === chunk.lines[offset - 1]) {
@@ -96,6 +105,8 @@ export const disassembleInstruction = (chunk: Chunk, offset: number) => {
       return jumpInstruction("OP_LOOP", -1, chunk, offset)
     case OpCode.OP_CALL:
       return byteInstruction("OP_CALL", chunk, offset)
+    case OpCode.OP_INVOKE:
+      return invokeInstruction("OP_INVOKE", chunk, offset)
     case OpCode.OP_CLOSURE: {
       offset += 1
       const constant = chunk.code[offset++]

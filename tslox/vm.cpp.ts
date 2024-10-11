@@ -215,6 +215,34 @@ const callValue = (callee: Value, argCount: number): boolean => {
   return false
 }
 
+const invokeFromClass = (klass: ObjClass, name: ObjString, argCount: number): boolean => {
+  let method: Value
+  if ((method = tableGet(klass.methods, name)) === undefined) {
+    runtimeError(`Undefined property '${name.chars}'`)
+    return false
+  }
+  return call(AS_CLOSURE(method), argCount)
+}
+
+const invoke = (name: ObjString, argCount: number): boolean => {
+  const receiver: Value = peek(argCount)
+
+  if (!IS_INSTANCE(receiver)) {
+    runtimeError("Only instances have methods.")
+    return false
+  }
+
+  const instance: ObjInstance = AS_INSTANCE(receiver)
+
+  let value: Value
+  if ((value = tableGet(instance.fields, name)) !== undefined) {
+    vm.stack[vm.stackTop - argCount - 1] = value
+    return callValue(value, argCount)
+  }
+
+  return invokeFromClass(instance.klass, name, argCount)
+}
+
 const bindMethod = (klass: ObjClass, name: ObjString): boolean => {
   let method: Value
   if ((method = tableGet(klass.methods, name)) === undefined) {
@@ -484,6 +512,15 @@ const run = (): InterpretResult => {
       case OpCode.OP_CALL: {
         const argCount = READ_BYTE()
         if (!callValue(peek(argCount), argCount)) {
+          return InterpretResult.INTERPRET_RUNTIME_ERROR
+        }
+        frame = vm.frames[vm.frameCount - 1]
+        break
+      }
+      case OpCode.OP_INVOKE: {
+        const method: ObjString = READ_STRING()
+        const argCount = READ_BYTE()
+        if (!invoke(method, argCount)) {
           return InterpretResult.INTERPRET_RUNTIME_ERROR
         }
         frame = vm.frames[vm.frameCount - 1]
