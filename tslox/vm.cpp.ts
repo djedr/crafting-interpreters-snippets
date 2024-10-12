@@ -5,7 +5,7 @@ import { disassembleInstruction } from "./debug.js";
 import { printValue } from "./value.js";
 import { ObjString, ObjType, isObjType, Obj, takeString, ObjFun, IS_OBJ, NativeFn, copyString, newNative, ObjNative, ObjClosure, newClosure, ObjUpvalue, newUpvalue, newClass, ObjClass, newInstance, ObjInstance, ObjBoundMethod, newBoundMethod } from "./object.js";
 import { freeObjects } from "./memory.js";
-import { Table, tableDelete, tableGet, tableSet } from "./table.js";
+import { Table, tableAddAll, tableDelete, tableGet, tableSet } from "./table.js";
 import { freeTable, makeTable } from "./table.js";
 
 #include "common.h"
@@ -448,6 +448,15 @@ const run = (): InterpretResult => {
         push(value)
         break
       }
+      case OpCode.OP_GET_SUPER: {
+        const name: ObjString = READ_STRING()
+        const superclass: ObjClass = AS_CLASS(pop())
+
+        if (!bindMethod(superclass, name)) {
+          return InterpretResult.INTERPRET_RUNTIME_ERROR
+        }
+        break
+      }
       case OpCode.OP_EQUAL: {
         const b = pop()
         const a = pop()
@@ -526,6 +535,16 @@ const run = (): InterpretResult => {
         frame = vm.frames[vm.frameCount - 1]
         break
       }
+      case OpCode.OP_SUPER_INVOKE: {
+        const method: ObjString = READ_STRING()
+        const argCount = READ_BYTE()
+        const superclass: ObjClass = AS_CLASS(pop())
+        if (!invokeFromClass(subclass, method, argCount)) {
+          return InterpretResult.INTERPRET_RUNTIME_ERROR
+        }
+        frame = vm.frames[vm.frameCount - 1]
+        break
+      }
       case OpCode.OP_CLOSURE: {
         const fun: ObjFun = AS_FUN(READ_CONSTANT())
         const closure: ObjClosure = newClosure(fun)
@@ -562,6 +581,16 @@ const run = (): InterpretResult => {
       }
       case OpCode.OP_CLASS:
         push(OBJ_VAL(newClass(READ_STRING())))
+        break
+      case OpCode.OP_INHERIT:
+        const superclass: Value = peek(1)
+        if (!IS_CLASS(superclass)) {
+          runtimeError(`Superclass must be a class.`)
+          return InterpretResult.INTERPRET_RUNTIME_ERROR
+        }
+        const subclass: ObjClass = AS_CLASS(peek(0))
+        tableAddAll(AS_CLASS(superclass).methods, subclass.methods)
+        pop() // Subclass.
         break
       case OpCode.OP_METHOD:
         defineMethod(READ_STRING())
