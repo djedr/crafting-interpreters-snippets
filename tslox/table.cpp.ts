@@ -35,7 +35,7 @@ const findEntry = (
   capacity: number,
   key: ObjString,
 ): Entry => {
-  let index = key.hash % capacity
+  let index = key.hash & (capacity - 1)
   let tombstone: Entry = null
   for (;;) {
     const entry = entries[index]
@@ -54,7 +54,7 @@ const findEntry = (
       return entry
     }
 
-    index = (index + 1) % capacity
+    index = (index + 1) & (capacity - 1)
   }
 }
 
@@ -128,7 +128,7 @@ export const tableAddAll = (from: Table, to: Table) => {
 export const tableFindString = (table: Table, chars: string, length: number, hash: number): ObjString => {
   if (table.count === 0) return null
 
-  let index = hash % table.capacity
+  let index = hash & (table.capacity - 1)
   for (;;) {
     const entry = table.entries[index]
     if (entry.key === null) {
@@ -140,7 +140,7 @@ export const tableFindString = (table: Table, chars: string, length: number, has
       return entry.key
     }
 
-    index = (index + 1) % table.capacity
+    index = (index + 1) & (table.capacity - 1)
   }
 }
 

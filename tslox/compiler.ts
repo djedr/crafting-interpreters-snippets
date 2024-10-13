@@ -75,6 +75,7 @@ interface Compiler {
 
 interface ClassCompiler {
   enclosing: ClassCompiler;
+  hasSuperclass: boolean;
 }
 
 const parser: Parser = {
@@ -430,6 +431,43 @@ const variable = (canAssign: boolean) => {
   namedVariable(parser.previous, canAssign)
 }
 
+const syntheticToken = (text: string): Token => {
+  let token: Token = {
+    source: text,
+    start: 0,
+    length: text.length,
+    line: 0,
+    // ???
+    type: TokenType.ERROR,
+  }
+  return token
+}
+
+const super_ = (canAssign: boolean) => {
+  if (currentClass === null) {
+    error("Can't use 'super' outside of a class.")
+  }
+  else if (currentClass.hasSuperclass === false) {
+    error("Can't use 'super' in a class with no superclass.")
+  }
+
+  consume(TokenType.DOT, "Expect '.' after 'super'.")
+  consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+  const name = identifierConstant(parser.previous)
+
+  namedVariable(syntheticToken("this"), false)
+  if (match(TokenType.LEFT_PAREN)) {
+    const argCount = argumentList()
+    namedVariable(syntheticToken("super"), false)
+    emitBytes(OpCode.OP_SUPER_INVOKE, name)
+    emitByte(argCount)
+  }
+  else {
+    namedVariable(syntheticToken("super"), false)
+    emitBytes(OpCode.OP_GET_SUPER, name)
+  }
+}
+
 const this_ = (canAssign: boolean) => {
   if (currentClass === null) {
     error("Can't use 'this' outside of a class.")
@@ -489,7 +527,7 @@ rules[TokenType.NIL]           = R(literal,  null, Precedence.NONE)
 rules[TokenType.OR]            = R(null,      or_, Precedence.OR)
 rules[TokenType.PRINT]         = R(null,     null, Precedence.NONE)
 rules[TokenType.RETURN]        = R(null,     null, Precedence.NONE)
-rules[TokenType.SUPER]         = R(null,     null, Precedence.NONE)
+rules[TokenType.SUPER]         = R(super_,   null, Precedence.NONE)
 rules[TokenType.THIS]          = R(this_,    null, Precedence.NONE)
 rules[TokenType.TRUE]          = R(literal,  null, Precedence.NONE)
 rules[TokenType.VAR]           = R(null,     null, Precedence.NONE)
@@ -716,9 +754,27 @@ const classDeclaration = () => {
   defineVariable(nameConstant)
 
   const classCompiler: ClassCompiler = {
-    enclosing: currentClass
+    enclosing: currentClass,
+    hasSuperclass: false,
   }
   currentClass = classCompiler
+
+  if (match(TokenType.LESS)) {
+    consume(TokenType.IDENTIFIER, `Expect superclass name.`)
+    variable(false)
+
+    if (identifiersEqual(className, parser.previous)) {
+      error(`A class can't inherit from itself.`)
+    }
+
+    beginScope()
+    addLocal(syntheticToken("super"))
+    defineVariable(0)
+
+    namedVariable(className, false)
+    emitByte(OpCode.OP_INHERIT)
+    classCompiler.hasSuperclass = true
+  }
 
   namedVariable(className, false)
   consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
@@ -727,6 +783,10 @@ const classDeclaration = () => {
   }
   consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
   emitByte(OpCode.OP_POP)
+
+  if (classCompiler.hasSuperclass) {
+    endScope()
+  }
 
   currentClass = currentClass.enclosing
 }

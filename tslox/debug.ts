@@ -75,6 +75,8 @@ export const disassembleInstruction = (chunk: Chunk, offset: number) => {
       return constantInstruction("OP_GET_PROPERTY", chunk, offset)
     case OpCode.OP_SET_PROPERTY:
       return constantInstruction("OP_SET_PROPERTY", chunk, offset)
+    case OpCode.OP_GET_SUPER:
+      return constantInstruction("OP_GET_SUPER", chunk, offset)
     case OpCode.OP_EQUAL:
       return simpleInstruction("OP_EQUAL", offset)
     case OpCode.OP_POP:
@@ -107,6 +109,8 @@ export const disassembleInstruction = (chunk: Chunk, offset: number) => {
       return byteInstruction("OP_CALL", chunk, offset)
     case OpCode.OP_INVOKE:
       return invokeInstruction("OP_INVOKE", chunk, offset)
+    case OpCode.OP_SUPER_INVOKE:
+      return invokeInstruction("OP_SUPER_INVOKE", chunk, offset)
     case OpCode.OP_CLOSURE: {
       offset += 1
       const constant = chunk.code[offset++]
@@ -129,6 +133,8 @@ export const disassembleInstruction = (chunk: Chunk, offset: number) => {
       return simpleInstruction("OP_RETURN", offset)
     case OpCode.OP_CLASS:
       return constantInstruction("OP_CLASS", chunk, offset)
+    case OpCode.OP_INHERIT:
+      return simpleInstruction("OP_INHERIT", offset)
     case OpCode.OP_METHOD:
       return constantInstruction("OP_METHOD", chunk, offset)
     default:

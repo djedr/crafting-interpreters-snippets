@@ -539,7 +539,7 @@ const run = (): InterpretResult => {
         const method: ObjString = READ_STRING()
         const argCount = READ_BYTE()
         const superclass: ObjClass = AS_CLASS(pop())
-        if (!invokeFromClass(subclass, method, argCount)) {
+        if (!invokeFromClass(superclass, method, argCount)) {
           return InterpretResult.INTERPRET_RUNTIME_ERROR
         }
         frame = vm.frames[vm.frameCount - 1]
