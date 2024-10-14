@@ -2668,3 +2668,69 @@ add[[1][2]]        Too few.
 ```
   arity(): number
 ```
+
+## 158
+
+2024-10-14: gonna skip the TypeScript/Java/C code snippets, as that is all written under [./jevlox](./jevlox/) (jlox ported to TypeScript) and [./tslox](./tslox/) (clox ported to TypeScript). Just gonna play around with the Lox snippets.
+
+On the margin:
+
+```
+[add].const[[[a][b]].function[
+  /print[[a].+[b]]
+]]
+```
+
+## 161
+
+```
+[count].function[n]./[
+  if[[n].>[1]]./[count[[n].-[1]]]
+  /print[n]
+]
+
+count[3]
+```
+
+## 162
+
+```
+[add].function[[a][b][c]]./[
+  /print[[a].+[b].+[c]]
+]
+
+add[[1][2][3]]
+```
+
+## 163
+
+```
+[add].function[[a][b]]./[
+  /print[[a].+[b]]
+]
+
+/print[add]   "<fn add>".
+```
+
+```
+[sayHi].function[[first][last]]./[
+  /print['Hi, [first] [last]!]
+]
+
+sayHi[['Dear]['Reader]]
+```
+
+## 164
+
+```
+[procedure].function[]./[
+  /print['don't return anything]
+]
+
+[result].const[procedure[]]
+/print[result]   ?
+```
+
+```
+return[null]
+```
