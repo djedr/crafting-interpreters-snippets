@@ -2734,3 +2734,46 @@ sayHi[['Dear]['Reader]]
 ```
 return[null]
 ```
+
+## 165
+
+```
+[count].function[n]./[
+  while[[n].<[100]]./[
+    if[[n].=[3]]./[return[n]]   <--
+    /print[n]
+    /set[ [n] [n].+[1] ]
+  ]
+]
+
+count[1]
+```
+
+## 167
+
+```
+[fib].function[n]./[
+  if[[n].<=[1]]./[return[n]]
+  return[[[n].-[2].fib[]].+[[n].-[1].fib[]]]
+]
+
+for[ [i].const[0] [i].<[20] [i]./set[[i].+[1]] ]./[
+  /print[fib[i]]
+]
+```
+
+```
+[makeCounter].function[]./[
+  [i].const[0]
+  [count].function[]./[
+    [i]./set[[i].+[1]]
+    /print[i]
+  ]
+
+  return[count]
+]
+
+[counter].const[makeCounter[]]
+counter[]   "1".
+counter[]   "2".
+```
