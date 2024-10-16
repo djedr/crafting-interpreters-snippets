@@ -2777,3 +2777,58 @@ for[ [i].const[0] [i].<[20] [i]./set[[i].+[1]] ]./[
 counter[]   "1".
 counter[]   "2".
 ```
+
+## 170
+
+```
+[thrice].function[fn]./[
+  for[ [i].const[1] [i].<=[3] [i]./set[[i].+[1]] ]./[
+    fn[i]
+  ]
+]
+
+thrice[function[a]./[
+  /print[a]
+]]
+
+"1".
+"2".
+"3".
+```
+
+```
+function[]./[]
+```
+
+```
+[scope].function[a]./[
+  [a].const['local]
+]
+```
+
+## 172
+
+```
+[a].const['outer]
+[
+  [a].const['inner]
+  /print[a]
+]
+```
+
+```
+[a].const['outer]
+[
+  /print[a]
+  [a].const['inner]
+]
+```
+
+```
+
+[a].const['outer]
+[
+  [a].const['inner]
+  /print[a]
+]
+```
