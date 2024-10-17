@@ -2832,3 +2832,49 @@ function[]./[]
   /print[a]
 ]
 ```
+
+## 173
+
+```
+[a].const['global]
+[
+  [showA].function[]./[
+    /print[a]
+  ]
+
+  showA[]
+  [a].const['block]
+  showA[]
+]
+```
+
+## 175
+
+```
+[
+  [a].let[]
+  1.
+  [b].let[]
+  2.
+]
+```
+
+## 180
+
+```
+[a].const['outer]
+[
+  [a].const[a]
+]
+```
+
+```
+[temp].let[a]     Run the initializer.
+[a].let[]         Declare the variable.
+[a]./set[temp]    Initialize it.
+```
+
+```
+[a].let[]    Define the variable.
+[a]./set[a]  Run the initializer.
+```
