@@ -2878,3 +2878,25 @@ function[]./[]
 [a].let[]    Define the variable.
 [a]./set[a]  Run the initializer.
 ```
+
+## 189
+
+```
+[bad].function[]./[
+  [a].const['first]
+  [a].const['second]
+]
+```
+
+```
+/return['at top level]
+```
+
+## 191
+
+```
+[a].const['outer]
+[
+  [a].const[a]
+]
+```
