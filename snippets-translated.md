@@ -2900,3 +2900,55 @@ function[]./[]
   [a].const[a]
 ]
 ```
+
+## 195
+
+```
+[Breakfast].class[
+  cook[]./[
+    /print['Eggs a-fryin'!]
+  ]
+
+  serve[who]./[
+    /print['Enjoy your breakfast, [who].]
+  ]
+]
+```
+
+## 197
+
+```
+[DevonshireCream].class[
+  serveOn[]./[
+    return['Scones]
+  ]
+]
+
+/print[DevonshireCream]   Prints "DevonshireCream".
+```
+
+```
+[Bagel].class[]
+Bagel[]
+```
+
+## 198
+
+```
+[Bagel].class[]
+[bagel].const[Bagel[]]
+
+/print[bagel]   Prints "Bagel instance",
+```
+
+## 199
+
+```
+[someObject].[someProperty]
+```
+
+## 201
+
+```
+[someObject].[someProperty]./set[value]
+```
