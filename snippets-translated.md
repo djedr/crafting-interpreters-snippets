@@ -2929,14 +2929,14 @@ function[]./[]
 
 ```
 [Bagel].class[]
-Bagel[]
+Bagel[].new[]
 ```
 
 ## 198
 
 ```
 [Bagel].class[]
-[bagel].const[Bagel[]]
+[bagel].const[Bagel[].new[]]
 
 /print[bagel]   Prints "Bagel instance",
 ```
@@ -2951,4 +2951,67 @@ Bagel[]
 
 ```
 [someObject].[someProperty]./set[value]
+```
+
+## 203
+
+```
+[m].const[[object].[method]]
+m[argument]
+```
+
+## 204
+
+```
+[Box].class[]
+
+[notMethod].function[argument]./[
+  /print['called function with [argument]]
+]
+
+[box].const[Box[].new[]]
+[box].[function]./set[notMethod]
+[box].[function]\['argument]
+```
+
+```
+breakfast[ [omelette].[filledWith]\[cheese] [sausage] ]
+```
+
+```
+[eggs].const[[omelette].[filledWith]\[cheese]]
+breakfast[ [eggs] [sausage] ]
+```
+
+```
+[Person].class[
+  sayName[]./[
+    /print[[this].[name]]
+  ]
+]
+
+[jane].const[Person[].new[]]
+[jane].[name]./set['Jane]
+
+[method].const[[jane].[sayName]]
+method[]
+```
+
+## 205
+
+```
+[Person].class[
+  sayName[]./[
+    /print[[this].[name]]
+  ]
+]
+
+[jane].const[Person[].new[]]
+[jane].[name]./set['Jane]
+
+[bill].const[Person[].new[]]
+[bill].[name]./set['Bill]
+
+[bill].[sayName]./set[[jane].[sayName]]
+[bill].[sayName]/[]   ?
 ```
