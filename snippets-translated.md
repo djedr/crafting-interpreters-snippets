@@ -3013,5 +3013,5 @@ method[]
 [bill].[name]./set['Bill]
 
 [bill].[sayName]./set[[jane].[sayName]]
-[bill].[sayName]/[]   ?
+[bill].[sayName]\[]   ?
 ```
