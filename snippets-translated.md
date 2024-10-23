@@ -3015,3 +3015,88 @@ method[]
 [bill].[sayName]./set[[jane].[sayName]]
 [bill].[sayName]\[]   ?
 ```
+
+could also have:
+
+```
+[object]./get[property]./call[args]
+```
+
+as a longer form of:
+
+```
+[object].[property]\[args]
+```
+
+which would compile to:
+
+```
+object.property(args)
+```
+
+or should it be:
+
+```
+[object]./get['property]./call[args]
+```
+
+that would compile into:
+
+```
+object["property"](args)
+```
+
+## 207
+
+```
+[Bacon].class[
+  eat[]./[
+    /print['Crunch crunch crunch!]
+  ]
+]
+
+Bacon[].new[].eat[]   Prints "Crunch crunch crunch!".
+```
+
+```
+[Egotist].class[
+  speak[]./[
+    /print[this]
+  ]
+]
+
+[method].const[Egotist[].new[].[speak]]
+method[]
+```
+
+## 208
+
+```
+[Cake].class[
+  taste[]./[
+    [adjective].const['delicious]
+    /print['The [[this].[flavor]] cake is [adjective]!]
+  ]
+]
+
+[cake].const[Cake[].new[]]
+[cake].[flavor]./set['German chocolate]
+[cake].[taste]\[]   Prints "The German chocolate cake is delicious!
+```
+
+## 209
+
+```
+[Thing].class[
+  getCallback[]./[
+    [localFunction].function[]./[
+      /print[this]
+    ]
+
+    return[localFunction]
+  ]
+]
+
+[callback].const[Thing[].new[].getCallback[]]
+callback[]
+```
