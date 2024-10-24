@@ -3100,3 +3100,71 @@ method[]
 [callback].const[Thing[].new[].getCallback[]]
 callback[]
 ```
+
+## 211
+
+```
+[notAMethod].function[]./[
+  /print[this]
+]
+```
+
+## 214
+
+```
+[Foo].class[
+  init[]./[
+    /print[this]
+  ]
+]
+
+[foo].const[Foo[].new[]]
+/print[foo.init[]]
+```
+
+## 215
+
+```
+[Foo].class[
+  init[]./[
+    return['something else]
+  ]
+]
+```
+
+## 216
+
+```
+[Foo].class[
+  init[]./[
+    return[]
+  ]
+]
+```
+
+## 217
+
+```
+[Math].class[
+  square[n].static[
+    return[[n].*[n]]
+  ]
+]
+
+print[[Math].[square]\[3]]   Prints "9".
+```
+
+```
+[Circle].class[
+  init[radius]./[
+    [this].[radius]./set[radius]
+  ]
+
+  area[].get[
+    return[[3.141592653].*[[this].[radius]].*[[this].[radius]]]
+  ]
+]
+
+[circle].const[Circle[4].new[]]
+/print[[circle].[area]]   Prints roughly 50.2655
+```
