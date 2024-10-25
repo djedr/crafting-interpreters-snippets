@@ -3168,3 +3168,42 @@ print[[Math].[square]\[3]]   Prints "9".
 [circle].const[Circle[4].new[]]
 /print[[circle].[area]]   Prints roughly 50.2655
 ```
+
+## 222
+
+```
+[Doughnut].class[
+  General doughnut stuff...
+]
+
+[BostonCream].extends[Doughnut].class[
+  Boston Cream-specific stuff...
+]
+```
+
+## 223
+
+```
+[Oops].extends[Oops].class[]
+```
+
+## 224
+
+```
+[NotAClass].const['I am totally not a class]
+
+[Subclass].extends[NotAClass].class[]   ?!
+```
+
+## 225
+
+```
+[Doughnut].class[
+  cook[]./[
+    /print['Fry until golden brown.]
+  ]
+]
+
+[BostonCream].extends[Doughnut].class[]
+BostonCream[].new[].cook[]
+```
