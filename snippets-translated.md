@@ -3055,7 +3055,7 @@ object["property"](args)
   ]
 ]
 
-Bacon[].new[].eat[]   Prints "Crunch crunch crunch!".
+Bacon[].new[].[eat]\[]   Prints "Crunch crunch crunch!".
 ```
 
 ```
@@ -3097,7 +3097,7 @@ method[]
   ]
 ]
 
-[callback].const[Thing[].new[].getCallback[]]
+[callback].const[Thing[].new[].[getCallback]\[]]
 callback[]
 ```
 
@@ -3119,7 +3119,7 @@ callback[]
 ]
 
 [foo].const[Foo[].new[]]
-/print[foo.init[]]
+/print[[foo].[init]\[]]
 ```
 
 ## 215
@@ -3205,5 +3205,90 @@ print[[Math].[square]\[3]]   Prints "9".
 ]
 
 [BostonCream].extends[Doughnut].class[]
-BostonCream[].new[].cook[]
+BostonCream[].new[].[cook]\[]
+```
+
+## 226
+
+```
+[Doughnut].class[
+  cook[]./[
+    /print['Fry until golden brown.]
+  ]
+]
+
+[BostonCream].extends[Doughnut].class[
+  cook[]./[
+    [super].[cook]\[]
+    /print['Pipe full of custard and coat with chocolate.]
+  ]
+]
+
+BostonCream[].new[].[cook]\[]
+```
+
+```
+/print[super]
+```
+
+```
+[method].const[[super].[cook]]
+method[]
+```
+
+## 227
+
+```
+[A].class[
+  method[]./[
+    /print['A method]
+  ]
+]
+
+[B].extends[A].class[
+  method[]./[
+    /print['B method]
+  ]
+  test[]./[
+    [super].[method]\[]
+  ]
+]
+
+[C].extends[B].class[]
+C[].new[].[test]\[]
+```
+
+## 232
+
+```
+[Eclair].class[
+  cook[]./[
+    [super].[cook]\[]
+    /print['Pipe full of creme patissiere.]
+  ]
+]
+```
+
+```
+[super].[notEnenInAClass]\[]
+```
+
+## 235
+
+```
+[Doughnut].class[
+  cook[]./[
+    /print['Fry until golden brown.]
+    inner[]
+    /print['Place in a nice box.]
+  ]
+]
+
+[BostonCream].extends[Doughnut].class[
+  cook[]./[
+    /print['Pipe full of custard and coat with chocolate.]
+  ]
+]
+
+BostonCream[].new[].[cook]\[]
 ```
