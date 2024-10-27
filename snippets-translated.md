@@ -3292,3 +3292,17 @@ C[].new[].[test]\[]
 
 BostonCream[].new[].[cook]\[]
 ```
+
+## 240
+
+```
+[fib].function[n]./[
+  if[[n].<[2]]./[return[n]]
+  return[[[n].-[1].fib[]].+[[n].-[2].fib[]]]
+]
+
+[before].const[clock[]]
+/print[fib[40]]
+[after].const[clock[]]
+/print[[after].-[before]]
+```
