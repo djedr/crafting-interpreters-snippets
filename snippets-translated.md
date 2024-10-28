@@ -3306,3 +3306,33 @@ BostonCream[].new[].[cook]\[]
 [after].const[clock[]]
 /print[[after].-[before]]
 ```
+
+## 252
+
+```
+[1].+[2]
+```
+
+# 255
+
+```
+/print[1]
+/print[2]
+```
+
+## 271
+
+```
+/print[[3].-[2]]
+```
+
+```
+[echo].function[n]./[
+  /print[n]
+  return[n]
+]
+
+/print[
+  echo[ echo[1].+[2].echo[] ].+[ echo[4].+[5].echo[] ].echo[]
+]
+```
