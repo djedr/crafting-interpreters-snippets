@@ -3332,7 +3332,74 @@ BostonCream[].new[].[cook]\[]
   return[n]
 ]
 
-/print[
-  echo[ echo[1].+[2].echo[] ].+[ echo[4].+[5].echo[] ].echo[]
+/print[+[
+  echo[+[ echo[1] echo[2] ]] echo[+[ echo[4] echo[5] ]]
+]]
+```
+
+no dots:
+
+```
+/print[-[ [3] [2] ]]
+
+/[
+  function[ [echo] [n] ]
+  /print[n]
+  return[n]
 ]
+
+/print[+[
+  echo[+[ echo[1] echo[2] ]] echo[+[ echo[4] echo[5] ]]
+]]
+```
+
+## 277
+
+```
+[a].const[1.2]
+/print[-[1]]   -1.2.
+```
+
+```
+const[ [a] [1.2] ]
+/print[-[1]]
+```
+
+## 278
+
+```
+-[1.2]
+```
+
+## 279
+
+```
+if[
+  [morning] WAKE_UP[]
+  sleepIn[]
+]
+```
+
+## 282
+
+```
++[ *[ [1] [2] ] [3] ]
++[ [1] *[ [2] [3] ] ]
+-[ [3] [2] [1] ]
+-[
+  +[  [1]  *[ [2] [3] ]  ]
+  /[ [4] -[5] ]
+]
+```
+
+```
+-[  [4]  *[ [3] -[2] ]  ]
+```
+
+## 283
+
+```
+const[ [a] [1] ]
+const[ [b] [2] ]
+const[  [c]  +[ [a] [b] ]  ]
 ```
