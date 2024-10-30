@@ -3403,3 +3403,30 @@ const[ [a] [1] ]
 const[ [b] [2] ]
 const[  [c]  +[ [a] [b] ]  ]
 ```
+
+```
+const[ 
+  [a] [1] 
+  [b] [2]
+  [c] +[ [a] [b] ]
+]
+```
+
+## 291
+
+```
+/print[+[ [1] [2] ]]
+```
+
+## 304
+
+```
+const[ [drink] ['Tea] ]
+const[ [steep] [4] ]
+const[ [cool] [2] ]
+/print['[drink] will be ready in [+[ [steep] [cool] ]] minutes.]
+```
+
+```
+'Nested ['interpolation?! Are you ['mad?!]]
+```
