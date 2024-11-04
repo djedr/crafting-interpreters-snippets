@@ -3499,3 +3499,20 @@ const[ [cool] [2] ]
 ```
 +[ ['st] ['ri] ['ng] ]
 ```
+
+## 382
+
+```
+function[ [showVariable] []
+  /print[global]
+]
+
+const[ [global] ['after] ]
+showVariable[]
+```
+
+```
+if[
+  [monday]  const[ [croissant] ['yes] ]   Error.
+]
+```
