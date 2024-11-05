@@ -3343,7 +3343,7 @@ no dots:
 /print[-[ [3] [2] ]]
 
 /[
-  function[ [echo] [n] ]
+  function[ echo[n] ]
   /print[n]
   return[n]
 ]
@@ -3503,7 +3503,7 @@ const[ [cool] [2] ]
 ## 382
 
 ```
-function[ [showVariable] []
+function[ showVariable[]
   /print[global]
 ]
 
@@ -3515,4 +3515,67 @@ showVariable[]
 if[
   [monday]  const[ [croissant] ['yes] ]   Error.
 ]
+```
+
+## 385
+
+```
+/print[+[ [1] [2] ]]
+/print[*[ [3] [4] ]]
+```
+
+## 386
+
+```
+/set[ [brunch] ['quiche] ]
+eat[brunch]
+```
+
+## 392
+
+```
+const[ [beverage] ['cafe au lait] ]
+const[ [breakfast] ['beignets with [beverage]] ]
+/print[breakfast]
+```
+
+```
+/set[
+  /get[
+    /call[
+      /get[ [menu] [brunch] ]
+      [sunday]
+    ]
+    [beverage]
+  ]
+  ['mimosa]
+]
+```
+
+## 393
+
+```
+/set[
+  *[ [a] [b] ]
+  +[ [c] [d] ]
+]
+```
+
+## 396
+
+```
+const[ [breakfast] ['beignets] ]
+const[ [beverage] ['cafe au lait] ]
+/set[ [breakfast] ['beignets with [beverage]] ]
+/print[breakfast]
+```
+
+## 397
+
+```
+function[ useVar[]
+  /print[oops]
+]
+
+const[ [ooops] ['too many o's!] ]
 ```
