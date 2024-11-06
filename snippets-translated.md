@@ -3579,3 +3579,38 @@ function[ useVar[]
 
 const[ [ooops] ['too many o's!] ]
 ```
+
+## 406
+
+```
+[
+  const[ [a] ['first] ]
+  const[ [a] ['second] ]
+]
+```
+
+```
+[
+  const[ [a] ['outer] ]
+  [
+    const[ [a] ['inner] ]
+  ]
+]
+```
+
+## 410
+
+```
+[
+  const[ [a] ['outer] ]
+  [
+    const[ [a] [a] ]
+  ]
+]
+```
+
+## 412
+
+```
+const[ [a] [a] ]
+```
