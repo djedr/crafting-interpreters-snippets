@@ -3313,7 +3313,7 @@ BostonCream[].new[].[cook]\[]
 [1].+[2]
 ```
 
-# 255
+## 255
 
 ```
 /print[1]
@@ -3613,4 +3613,47 @@ const[ [ooops] ['too many o's!] ]
 
 ```
 const[ [a] [a] ]
+```
+
+## 414
+
+```
+if[
+  [condition]  /print['condition was truthy]
+]
+```
+
+## 440
+
+```
+function[ first[]
+  const[ [a] [1] ]
+  second[]
+  const[ [b] [2] ] 
+]
+
+function[ second[]
+  const[ [c] [3] ]
+  const[ [d] [4] ] 
+]
+
+first[]
+```
+
+## 441
+
+```
+function[ first[]
+  const[ [a] [1] ]
+  second[]
+  const[ [b] [2] ]
+  second[]
+]
+
+function[ second[]
+  const[ [c] [3] ]
+  const[ [d] [4] ] 
+]
+
+first[]
 ```
