@@ -3657,3 +3657,64 @@ function[ second[]
 
 first[]
 ```
+
+## 449
+
+```
+function[ areWeHavingItYet[]
+  /print['Yes we are!]
+]
+
+/print[areWeHavingItYet]
+```
+
+## 451
+
+```
+function[ sum[ [a] [b] [c] ]
+  /return[+[ [a] [b] [c] ]]
+]
+
+/print[+[  [4]  sum[ [5] [6] [7] ]  ]]
+```
+
+## 453
+
+```
+const[ [notAFunction] [123] ]
+notAFunction[]
+```
+
+## 455
+
+```
+function[ a[] b[] ]
+function[ b[] c[] ]
+function[ c[] 
+  c[ ['too] ['many] ]
+]
+
+a[]
+```
+
+## 457
+
+```
+function[ noReturn[]
+  /print['Do stuff]
+  No return here.
+]
+
+/print[ noReturn[] ]   ???
+```
+
+## 462
+
+```
+function[ fib[n]
+  if[
+    <[ [n] [2] ]  /return[n]
+    /return[+[  fib[-[ [n] [2] ]]  fib[-[ [n] [1] ]]  ]]
+  ]
+]
+```
