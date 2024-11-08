@@ -3717,4 +3717,8 @@ function[ fib[n]
     /return[+[  fib[-[ [n] [2] ]]  fib[-[ [n] [1] ]]  ]]
   ]
 ]
+
+const[ [start] clock[] ]
+/print[ fib[35] ]
+/print[-[ clock[] [start] ]]
 ```
