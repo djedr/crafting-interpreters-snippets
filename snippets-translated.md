@@ -3564,7 +3564,7 @@ const[ [breakfast] ['beignets with [beverage]] ]
 ## 396
 
 ```
-const[ [breakfast] ['beignets] ]
+let[ [breakfast] ['beignets] ]
 const[ [beverage] ['cafe au lait] ]
 /set[ [breakfast] ['beignets with [beverage]] ]
 /print[breakfast]
@@ -3772,7 +3772,7 @@ bagel[]
 
 ```
 function[ outer[]
-  const[ [x] [1] ]   (1)
+  let[ [x] [1] ]   (1)
   /set[ [x] [2] ]    (2)
 
   function[ inner[]  (3)
@@ -3805,4 +3805,183 @@ function[ outer[]
   ]
   inner[]
 ]
+```
+
+## 475
+
+```
+function[ outer[]
+  const[ [x] [1] ]
+
+  function[ middle[]
+    function[ inner[]
+      /print[x]
+    ]
+  ]
+]
+```
+
+```
+function[ outer[]
+  const[ [x] ['value] ]
+
+  function[ middle[]
+    function[ inner[]
+      /print[x]
+    ]
+
+    /print['create inner closure]
+    return[inner]
+  ]
+
+  /print['return from outer]
+  return[middle]
+]
+
+const[ [mid] outer[] ]
+const[ [in] mid[] ]
+in[]
+```
+
+## 478
+
+```
+function[ outer[]
+  const[ [a] [1] ]
+  const[ [b] [2] ]
+  function[ middle[]
+    const[ [c] [3] ]
+    const[ [d] [4] ]
+    function[ inner[]
+      /print[+[ [a] [b] [c] [d] ]]
+    ]
+  ]
+]
+```
+
+## 480
+
+```
+function[ outer[]
+  let[ [x] ['before] ]
+  function[ inner[]
+    /set[ [x] ['assigned] ]
+  ]
+  inner[]
+  /print[x]
+]
+outer[]
+```
+
+## 483
+
+```
+function[ outer[]
+  const[ [x] ['outside] ]
+  function[ inner[]
+    /print[x]
+  ]
+  inner[]
+]
+outer[]
+```
+
+## 484
+
+```
+function[ outer[]
+  const[ [x] ['outside] ]
+  function[ inner[]
+    /print[x]
+  ]
+
+  return[inner]
+]
+
+const[ [closure] outer[] ]
+closure[]
+```
+
+```
+let[ [globalSet] ]
+let[ [globalGet] ]
+
+function[ main[]
+  let[ [a] ['initial] ]
+
+  function[  set[]  /set[ [a] ['updated] ]  ]
+  function[  get[]  /print[a]  ]
+
+  /set[ [globalSet] [set] ]
+  /set[ [globalGet] [get] ]
+]
+
+main[]
+globalSet[]
+globalGet[]
+```
+
+## 488
+
+```
+[
+  const[ [a] [1] ]
+  function[ f[] /print[a] ]
+  const[ [b] [2] ]
+  function[ g[] /print[b] ]
+  const[ [c] [3] ]
+  function[ h[] /print[c] ]
+]
+```
+
+
+## 494
+
+```
+let[globalOne]
+let[globalTwo]
+
+function[ main[]
+  [
+    let[ [a] ['one] ]
+    function[ one[] /print[a] ]
+
+    /set[ [globalOne] [one] ]
+  ]
+
+  [
+    let[ [a] ['two] ]
+    function[ two[] /print[a] ]
+
+    /set[ [globalTwo] [two] ]
+  ]
+]
+
+main[]
+globalOne[]
+globalTwo[]
+```
+
+```
+let[globalOne]
+let[globalTwo]
+
+function[ main[]
+  for[
+    let[ [a] [1] ]
+    <=[ [a] [2] ]
+    /set[  [a]  +[ [a] [1] ]  ]
+
+    function[ closure[] /print[a] ]
+
+    if[
+      =[ [globalOne] [null] ]  /set[ [globalOne] [closure] ]
+      /set[ [globalTwo] [closure] ]
+    ]
+  ]
+]
+
+main[]
+globalOne[]
+globalTwo[]
 ```
