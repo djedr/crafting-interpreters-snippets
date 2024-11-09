@@ -3722,3 +3722,87 @@ const[ [start] clock[] ]
 /print[ fib[35] ]
 /print[-[ clock[] [start] ]]
 ```
+
+## 463
+
+```
+const[ [x] ['global] ]
+function[ outer[]
+  const[ [x] ['outer] ]
+  function[ inner[]
+    /print[x]
+  ]
+  inner[]
+]
+outer[]
+```
+
+## 464
+
+```
+function[ makeClosure[]
+  const[ [local] ['local] ]
+  function[ closure[]
+    /print[local]
+  ]
+  return[closure]
+]
+
+const[ [closure] makeClosure[] ]
+closure[]
+```
+
+## 465
+
+```
+function[ makeClosure[value]
+  function[ closure[]
+    /print[value]
+  ]
+  return[closure]
+]
+
+const[ [doughnut] makeClosure['doughnut] ]
+const[ [bagel] makeClosure['bagel] ]
+doughnut[]
+bagel[]
+```
+
+## 470
+
+```
+function[ outer[]
+  const[ [x] [1] ]   (1)
+  /set[ [x] [2] ]    (2)
+
+  function[ inner[]  (3)
+    /print[x]
+  ]
+
+  inner[]
+]
+```
+
+## 471
+
+```
+[
+  const[ [a] [3] ]
+
+  function[ f[]
+    /print[a]
+  ]
+]
+```
+
+## 472
+
+```
+function[ outer[]
+  const[ [x] [1] ]
+  function[ inner[]
+    /print[x]   (1)
+  ]
+  inner[]
+]
+```
