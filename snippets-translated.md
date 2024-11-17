@@ -3985,3 +3985,37 @@ main[]
 globalOne[]
 globalTwo[]
 ```
+
+## 500
+
+```
+let[ [a] ['first value] ]
+/set[ [a] ['updated] ]
+GC here.
+/print[a]
+```
+
+```
+const[ [global] ['string] ]
+[
+  const[ [local] ['another] ]
+  /print[+[ [global] [local] ]]
+]
+```
+
+## 501
+
+```
+function[ makeClosure[]
+  const[ [a] ['data] ]
+
+  function[ f[] /print[a] ]
+  return[f]
+]
+
+[
+  const[ [closure] makeClosure[] ]
+  GC here.
+  closure[]
+]
+```
