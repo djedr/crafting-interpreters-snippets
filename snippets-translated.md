@@ -4019,3 +4019,60 @@ function[ makeClosure[]
   closure[]
 ]
 ```
+
+## 534
+
+```
+class[ Brioche[] ]
+/print[ new[Brioche[]] ]
+```
+
+## 535
+
+```
+/set[
+  /get[ [eclair] [filling] ]
+  ['pastry creme]
+]
+/print[/get[ [eclair] [filling] ]]
+```
+
+```
+/set[
+  +[  [a]  /get[ [b] [c] ]  ]
+  [3]
+]
+```
+
+```
++[
+  [a]
+  /set[
+    /get[ [b] [c] ]
+    [3]
+  ]
+]
+```
+
+## 538
+
+```
+class[ Toast[] ]
+const[ [toast] new[Toast[]] ]
+/print[
+  /set[  /get[ [toast] [jam] ]  ['grape]  ]   Prints "grape".
+]
+```
+
+```
+class[ Pair[] ]
+
+const[ [pair] new[Pair[]] ]
+
+/set[  /get[ [pair] [first] ]   [1]  ]
+/set[  /get[ [pair] [second] ]  [2]  ]
+/print[+[
+  /get[ [pair] [first] ]
+  /get[ [pair] [second] ]
+]]  3.
+```
