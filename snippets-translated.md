@@ -4119,3 +4119,93 @@ const[ [brunch] new[Brunch[]] ]
 const[  [eggs]  /get[ [brunch] [eggs] ]  ]
 ```
 
+## 551
+
+```
+class[ [Scone]
+  /[ topping[ [first] [second] ]
+    /print['scone with [first] and [second]]
+  ]
+]
+
+const[ [scone] new[Scone[]] ]
+/get[ [scone] [topping] ][ ['berries] ['cream] ]
+```
+
+## 552
+
+```
+class[ [Nested]
+  /[ method[]
+    function[ fun[]
+      /print[this]
+    ]
+    fun[]
+  ]
+]
+
+/get[ new[Nested[]] [method] ][]
+```
+
+## 553
+
+```
+/get[ [scone] [topping] ][ ['berries] ['cream] ]
+```
+
+## 554
+
+```
+/print[this]   At top level.
+
+function[ notMethod[]
+  /print[this]   In a function.
+]
+```
+
+## 556
+
+```
+class[ [Brunch]
+  /[  constructor[ [food] [drink] ]  ]
+]
+
+new[Brunch[]][ ['eggs] ['coffee] ]
+```
+
+## 559
+
+```
+class[ [CoffeeMaker]
+  /[ constructor[coffee]
+    /set[  /get[ [this] [coffee] ]  [coffee]  ]
+  ]
+
+  /[ brew[]
+    /print['Enjoy your cup of [/get[ [this] [coffee] ]]]
+
+    No reusing grounds!
+    /set[  /get[ [this] [coffee] ]  [null]  ]
+  ]
+]
+
+const[ [maker] new[CoffeeMaker['coffee and chicory]]  ]
+/get[ [maker] [brew] ][]
+```
+
+## 563
+
+```
+class[ [Oops]
+  /[ constructor[]
+    function[ f[]
+      /print['not a method]
+    ]
+
+    /set[  /get[ [this] [field] ]  [f]  ]
+  ]
+]
+
+const[ [oops] new[Oops[]] ]
+/get[ [oops] [field] ][]
+```
