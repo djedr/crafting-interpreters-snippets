@@ -4076,3 +4076,46 @@ const[ [pair] new[Pair[]] ]
   /get[ [pair] [second] ]
 ]]  3.
 ```
+
+## 544
+
+or maybe:
+
+```
+class[ [Brunch]
+  /[ bacon[] ]
+  /[ eggs[] ]
+]
+```
+
+## 546
+
+```
+const[  [closure]  /get[ [instance] [method] ]  ]
+closure[argument]
+```
+
+```
+class[ [Person]
+  /[ sayName[]
+    /print[/get[ [this] [name] ]]
+  ]
+]
+
+const[ [jane] new[Person[]] ]
+/set[  /get[ [jane] [name] ]  ['Jane]  ]
+const[  [method]  /get[ [jane] [sayName] ]  ]
+method[]   ?
+```
+
+## 550
+
+```
+class[ [Brunch] 
+  /[ eggs[] ]
+]
+
+const[ [brunch] new[Brunch[]] ]
+const[  [eggs]  /get[ [brunch] [eggs] ]  ]
+```
+
