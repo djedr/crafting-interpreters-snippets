@@ -4209,3 +4209,135 @@ class[ [Oops]
 const[ [oops] new[Oops[]] ]
 /get[ [oops] [field] ][]
 ```
+
+## 568
+
+```
+class[ [Doughnut]
+  /[ cook[]
+    /print['Dunk in the fryer.]
+  ]
+]
+
+class[ [Cruller] extends[Doughnut]
+  /[ finish[]
+    /print['Glaze with icing.]
+  ]
+]
+```
+
+```
+class[ [Cruller] extends[Doughnut]
+```
+
+## 571
+
+```
+const[ [NotClass] ['So not a class] ]
+class[ [OhNo] extends[NotClass] ]
+```
+
+```
+class[ [A]
+  /[ method[]
+    /print['A method]
+  ]
+]
+
+class[ [B] extends[A]
+  /[ method[]
+    /print['B method]
+  ]
+
+  /[ test[]
+    /call[/get[ [super] [method] ]]
+  ]
+]
+
+class[ [C] extends[B] ]
+/call[/get[ new[C[]] [test] ]]
+```
+
+## 572
+
+```
+class[ [A]
+  /[ method[]
+    /print['A method]
+  ]
+]
+
+const[ [Bs_super] [A] ]
+
+class[ [B] extends[A]
+  /[ method[]
+    /print['B method]
+  ]
+
+  /[ test[]
+    runtimeSuperCall[ [Bs_super] ['method] ]
+  ]
+]
+
+const[ [Cs_super] [B] ]
+class[ [C] extends[B] ]
+
+/call[/get[ new[C[]] [test] ]]
+```
+
+## 574
+
+```
+class[ [A]
+  /[ method[] /print['A] ]
+]
+
+class[ [B] extends[A]
+  /[ method[]
+    const[ [closure] /get[[super][method]] ]
+    closure[]   Prints "A".
+  ]
+]
+```
+
+## 575
+
+```
+class[ [Doughnut]
+  /[ cook[]
+    /print['Dunk in the fryer.]
+    /call[ /get[[this][finish]] ['sprinkles] ]
+  ]
+
+  /[ finish[ingredient]
+    /print['Finish with [ingredient]]
+  ]
+]
+
+class[ [Cruller] extends[Doughnut]
+  /[ finish[ingredient]
+    No sprinkles, always icing.
+    /call[ /get[[super][finish]] ['icing] ]
+  ]
+]
+```
+
+## 581
+
+```
+class[ [Doughnut]
+  /[ cook[]
+    /print['Fry until golden brown.]
+    inner[]
+    /print['Place in a nice box.]
+  ]
+]
+
+class[ [BostonCream] extends[Doughnut]
+  /[ cook[]
+    /print['Pipe full of custard and coat with chocolate]
+  ]
+]
+
+/call[/get[ new[BostonCream[]] [cook] ]]
+```
