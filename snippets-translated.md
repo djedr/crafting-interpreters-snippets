@@ -4341,3 +4341,44 @@ class[ [BostonCream] extends[Doughnut]
 
 /call[/get[ new[BostonCream[]] [cook] ]]
 ```
+
+## 586
+
+```
+class[ [Zoo]
+  /[ init[]
+    /set[ /get[[this][aardvark]] [1] ]
+    /set[ /get[[this][baboon]] [1] ]
+    /set[ /get[[this][cat]] [1] ]
+    /set[ /get[[this][donkey]] [1] ]
+    /set[ /get[[this][elephant]] [1] ]
+    /set[ /get[[this][fox]] [1] ]
+  ]
+  /[ ant[] return[/get[[this][aardvark]]] ]
+  /[ banana[] return[/get[[this][baboon]]] ]
+  /[ tuna[] return[/get[[this][cat]]] ]
+  /[ hay[] return[/get[[this][donkey]]] ]
+  /[ grass[] return[/get[[this][elephant]]] ]
+  /[ mouse[] return[/get[[this][fox]]] ]
+]
+
+const[ [zoo] new[Zoo[]] ]
+const[ [sum] [0] ]
+const[ [start] clock[] ]
+while[
+  <[ [sum] [100000000] ]
+  /set[[sum]
+    +[[sum]
+      /call[/get[[zoo][ant]]]
+      /call[/get[[zoo][banana]]]
+      /call[/get[[zoo][tuna]]]
+      /call[/get[[zoo][hay]]]
+      /call[/get[[zoo][grass]]]
+      /call[/get[[zoo][mouse]]]
+    ]
+  ]
+]
+
+/print[-[ clock[] [start] ]]
+/print[sum]
+```
